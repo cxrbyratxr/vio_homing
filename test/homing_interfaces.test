@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="vio_homing" type="homing_manager.py" name="homing_manager" output="screen"/>
+  <test pkg="vio_homing" type="homing_interfaces.py" test-name="homing_interfaces_test" time-limit="45"/>
+</launch>

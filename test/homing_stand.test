@@ -1,0 +1,10 @@
+<launch>
+  <include file="$(find vio_homing)/launch/homing_stand.launch">
+    <arg name="run_simulator" value="false"/>
+    <arg name="heartbeat_port" value="15052"/>
+  </include>
+  <test pkg="vio_homing" type="homing_stand_sim.py" test-name="homing_stand_test" time-limit="180.0" args="--rostest">
+    <param name="heartbeat_port" value="15052"/>
+    <param name="result_file" value="/tmp/vio_homing_rostest_result.json"/>
+  </test>
+</launch>

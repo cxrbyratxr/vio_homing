@@ -28,6 +28,10 @@
     name="odom_topic"
     default="/vio/odom_frd"
   />
+  <arg name="enable_homing_commands" default="false"/>
+  <arg name="frd_to_ned_alignment_valid" default="false"/>
+  <arg name="frd_to_ned_yaw_deg" default="0.0"/>
+  <arg name="frd_origin_ned" default="[0.0, 0.0, 0.0]"/>
 
   <node
     pkg="vio_homing"
@@ -66,6 +70,10 @@
       name="odom_quality"
       value="0"
     />
+    <param name="enable_homing_commands" value="$(arg enable_homing_commands)"/>
+    <param name="frd_to_ned_alignment_valid" value="$(arg frd_to_ned_alignment_valid)"/>
+    <param name="frd_to_ned_yaw_deg" value="$(arg frd_to_ned_yaw_deg)"/>
+    <rosparam param="frd_origin_ned" subst_value="true">$(arg frd_origin_ned)</rosparam>
 
     <param
       name="timesync_rate"
@@ -169,4 +177,12 @@
 
   </node>
 
+  <!-- Homing outputs; the shared bridge can transport them when explicitly enabled. -->
+  <node pkg="vio_homing" type="homing_manager.py" name="homing_manager"
+        output="screen" respawn="true" respawn_delay="2.0">
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="arrival_radius" value="0.4"/>
+    <param name="wait_link_seconds" value="60.0"/>
+    <param name="odom_timeout" value="1.0"/>
+  </node>
 </launch>

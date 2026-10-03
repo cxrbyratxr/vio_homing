@@ -1,0 +1,586 @@
+
+PHASE startup | COMMAND ver all
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Kver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000002
+HW version: 0x000
+HW revision: 0x002
+PX4 git-hash: 6ea3539157ca358c70a515878b77077af7d4611d
+PX4 version: Release 1.16.0 (17826047)
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: 886acbbdb4f061e5c0ce1a76afbcfa7cb7df9849
+Build datetime: Aug  6 2025 15:07:26
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000383236313533511400450039
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> [K
+
+PHASE startup | COMMAND listener vehicle_status 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 4890945492 (0.135709 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 3706842520
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 4
+    nav_state: 4
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: True
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> [K
+
+PHASE return_cancel_stale_and_mavlink_loss | COMMAND listener vehicle_status 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 4904824610 (0.001131 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 4904769496
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 14
+    nav_state: 14
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: True
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> [K
+
+PHASE return_cancel_stale_and_mavlink_loss | COMMAND listener offboard_control_mode 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener offboard_control_mode 1
+
+TOPIC: offboard_control_mode
+ offboard_control_mode
+    timestamp: 4905706487 (0.030446 seconds ago)
+    position: True
+    velocity: False
+    acceleration: False
+    attitude: False
+    body_rate: False
+    thrust_and_torque: False
+    direct_actuator: False
+
+nsh> [K
+
+PHASE return_cancel_stale_and_mavlink_loss | COMMAND listener vehicle_visual_odometry 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_visual_odometry 1
+
+TOPIC: vehicle_visual_odometry
+ vehicle_visual_odometry
+    timestamp: 4906438144 (0.008859 seconds ago)
+    timestamp_sample: 4906438143 (1 us before timestamp)
+    position: [4.00000, 0.00000, 0.00000]
+    q: [1.00000, 0.00000, 0.00000, 0.00000] (Roll: 0.0 deg, Pitch: -0.0 deg, Yaw: 0.0 deg)
+    velocity: [0.00000, 0.00000, 0.00000]
+    angular_velocity: [0.00000, 0.00000, 0.00000]
+    position_variance: [nan, 0.00000, 0.00000]
+    orientation_variance: [0.00000, 0.00000, 0.00000]
+    velocity_variance: [nan, 0.00000, 0.00000]
+    pose_frame: 2
+    velocity_frame: 3
+    reset_counter: 0
+    quality: 0
+
+nsh> [K
+
+PHASE wait_link_cancel_old_timer | COMMAND listener vehicle_status 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 4924177729 (0.049302 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 4924166517
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 14
+    nav_state: 14
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: True
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> [K
+
+PHASE wait_link_cancel_old_timer | COMMAND listener offboard_control_mode 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener offboard_control_mode 1
+
+TOPIC: offboard_control_mode
+ offboard_control_mode
+    timestamp: 4925106751 (0.031148 seconds ago)
+    position: True
+    velocity: False
+    acceleration: False
+    attitude: False
+    body_rate: False
+    thrust_and_torque: False
+    direct_actuator: False
+
+nsh> [K
+
+PHASE wait_link_cancel_old_timer | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 4925824968 (0.038313 seconds ago)
+    position: [10.00000, -17.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE wait_link_cancel_old_timer | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 4926768468 (0.027272 seconds ago)
+    position: [10.00000, -18.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE wait_link_cancel_old_timer | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 4927658859 (0.044909 seconds ago)
+    position: [10.00000, -19.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE wait_link_cancel_old_timer | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 4928571579 (0.043418 seconds ago)
+    position: [10.00000, -20.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener vehicle_status 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 4998771871 (0.032903 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 4998771750
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 14
+    nav_state: 14
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: True
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener offboard_control_mode 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener offboard_control_mode 1
+
+TOPIC: offboard_control_mode
+ offboard_control_mode
+    timestamp: 4999721622 (0.006101 seconds ago)
+    position: True
+    velocity: False
+    acceleration: False
+    attitude: False
+    body_rate: False
+    thrust_and_torque: False
+    direct_actuator: False
+
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 5000360744 (0.051043 seconds ago)
+    position: [10.00000, -17.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 5001268489 (0.028223 seconds ago)
+    position: [10.00000, -18.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 5002146490 (0.028251 seconds ago)
+    position: [10.00000, -19.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener trajectory_setpoint 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener trajectory_setpoint 1
+
+TOPIC: trajectory_setpoint
+ trajectory_setpoint
+    timestamp: 5003032501 (0.028713 seconds ago)
+    position: [10.00000, -20.00000, 2.00000]
+    velocity: [nan, nan, nan]
+    acceleration: [nan, nan, nan]
+    jerk: [0.00000, 0.00000, 0.00000]
+    yaw: nan
+    yawspeed: nan
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener vehicle_visual_odometry 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_visual_odometry 1
+
+TOPIC: vehicle_visual_odometry
+ vehicle_visual_odometry
+    timestamp: 5008961696 (0.012604 seconds ago)
+    timestamp_sample: 5008961694 (2 us before timestamp)
+    position: [0.00000, 0.00000, 0.00000]
+    q: [1.00000, 0.00000, 0.00000, 0.00000] (Roll: 0.0 deg, Pitch: -0.0 deg, Yaw: 0.0 deg)
+    velocity: [0.00000, 0.00000, 0.00000]
+    angular_velocity: [0.00000, 0.00000, 0.00000]
+    position_variance: [nan, 0.00000, 0.00000]
+    orientation_variance: [0.00000, 0.00000, 0.00000]
+    velocity_variance: [nan, 0.00000, 0.00000]
+    pose_frame: 2
+    velocity_frame: 3
+    reset_counter: 0
+    quality: 0
+
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener vehicle_command 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_command 1
+
+TOPIC: vehicle_command
+ vehicle_command
+    timestamp: 5063826042 (0.102824 seconds ago)
+    param5: nan
+    param6: nan
+    param1: 0.00000
+    param2: 0.00000
+    param3: 0.00000
+    param4: nan
+    param7: nan
+    command: 21
+    source_component: 191
+    target_system: 1
+    target_component: 1
+    source_system: 245
+    confirmation: 0
+    from_external: True
+
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener vehicle_command_ack 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_command_ack 1
+
+TOPIC: vehicle_command_ack
+ vehicle_command_ack
+    timestamp: 5063829673 (0.860053 seconds ago)
+    command: 21
+    result_param2: 0
+    target_component: 191
+    result: 0
+    result_param1: 0
+    target_system: 245
+    from_external: False
+
+nsh> [K
+
+PHASE full_return_wait_land | COMMAND listener vehicle_status 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 5065363509 (0.022507 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 5063840514
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 18
+    nav_state: 18
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: True
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> [K
+
+PHASE repeated_land_and_manager_restart | COMMAND listener vehicle_status 1
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> [Klistener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 5073546808 (0.103153 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 5073546484
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 4
+    nav_state: 4
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: True
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> [K

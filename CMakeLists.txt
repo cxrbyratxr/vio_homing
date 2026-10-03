@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+catkin_python_setup()
+
 catkin_package(
   CATKIN_DEPENDS
     rospy
@@ -26,6 +28,24 @@ catkin_install_python(
     scripts/check_imu_timing.py
     scripts/wifi_link_monitor.py
     scripts/trajectory_recorder.py
+    scripts/homing_manager.py
+    scripts/homing_stand_sim.py
+    scripts/px4_homing_bench.py
+    scripts/run_px4_homing_bench.py
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  catkin_install_python(PROGRAMS test/homing_interfaces.py
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  catkin_add_nosetests(test/test_homing_logic.py)
+  catkin_add_nosetests(test/test_homing_transport.py)
+  add_rostest(test/homing_stand.test)
+  add_rostest(test/homing_interfaces.test)
+endif()

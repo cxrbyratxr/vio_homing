@@ -749,3 +749,19 @@ PX4 vehicle_visual_odometry
 ```
 
 Главный незакрытый блок — реальная камера и VINS-Fusion. До их подключения инфраструктура ROS/MAVLink transport, времени, детектирования потери связи, записи маршрута, return path и автозапуска companion computer уже проверена на стенде.
+
+
+## Стенд homing → PX4
+
+Полный отчёт и команды запуска: PX4_HOMING_BENCH.md; логи: verification/px4_bench/. Камеры, GPS и силовой части нет; Wi-Fi не используется. Все движения синтетические, приём MAVLink и ACK проверены на настоящем Pixhawk. ARM не выполнялся, параметры PX4 не менялись.
+
+## Результат зафиксированного прогона
+
+- Полный сценарий PASS; WAIT_LINK до ACK LAND: **60.029621 s**. Переходы ROS: WAIT_LINK 1791044498.614805 → LAND 1791044558.615075 (60.000270 s).
+- LAND: один COMMAND_LONG21, MAV_RESULT_ACCEPTED (0); uORB vehicle_command: source_system245, source_component191, from_external=True. vehicle_command_ack: command21, result0. PX4 перешёл в nav_state18 AUTO_LAND, оставаясь arming_state1 и armed_time0. Затем исходный nav_state4 восстановлен.
+- Каждая уникальная следующая цель FRD x=3,2,1,0 подтверждена на PX4 как NED (10,-17,2), (10,-18,2), (10,-19,2), (10,-20,2), в двух сценариях.
+- IMU **99.55 Hz**, ODOMETRY **29.93 Hz**, одометрия отдельно прочитана в vehicle_visual_odometry. После завершения исходный companion bridge возобновлён: IMU около100 Hz.
+- Отмена RETURN, отмена WAIT_LINK с наблюдением61 s, stale odometry, пустой маршрут/отсутствующая odometry, реальное закрытие MAVLink и переподключение, повторный LAND, перезапуск homing_manager: PASS.
+- Catkin: **24 tests, 0 errors, 0 failures, 0 skipped**; включая20 чистых тестов Python2.7 и ROS-интерфейсы/сценарий.
+
+На стенде Jetson Nano + Pixhawk 6C Mini подтверждён программный тракт от детекции потери связи и формирования обратной траектории до передачи команд возврата и LAND в PX4. Реальное выполнение команд БВС будет проверяться после сборки аппарата.

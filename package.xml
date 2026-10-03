@@ -19,5 +19,9 @@
   <depend>nav_msgs</depend>
   <depend>std_msgs</depend>
 
+  <exec_depend>rosnode</exec_depend>
+  <test_depend>rostest</test_depend>
+  <test_depend>python-nose</test_depend>
+
   <export/>
 </package>

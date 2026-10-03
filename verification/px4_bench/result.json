@@ -1,0 +1,270 @@
+{
+  "odometry_rate_hz": 29.92531342959856, 
+  "frame_alignment": {
+    "origin_ned": [
+      10, 
+      -20, 
+      2
+    ], 
+    "yaw_degrees": 90
+  }, 
+  "camera": false, 
+  "px4_git_hash": "6ea3539157ca358c70a515878b77077af7d4611d", 
+  "px4_version": "1.16.0", 
+  "land_ack": "MAV_RESULT_ACCEPTED", 
+  "transitions": [
+    [
+      1791044383.660161, 
+      "NORMAL"
+    ], 
+    [
+      1791044390.565975, 
+      "LINK_LOST"
+    ], 
+    [
+      1791044392.318543, 
+      "NORMAL"
+    ], 
+    [
+      1791044397.061872, 
+      "LINK_LOST"
+    ], 
+    [
+      1791044397.129686, 
+      "RETURN"
+    ], 
+    [
+      1791044410.218007, 
+      "NORMAL"
+    ], 
+    [
+      1791044416.828831, 
+      "LINK_LOST"
+    ], 
+    [
+      1791044416.883122, 
+      "RETURN"
+    ], 
+    [
+      1791044424.174513, 
+      "WAIT_LINK"
+    ], 
+    [
+      1791044424.874291, 
+      "NORMAL"
+    ], 
+    [
+      1791044491.47396, 
+      "LINK_LOST"
+    ], 
+    [
+      1791044491.529376, 
+      "RETURN"
+    ], 
+    [
+      1791044498.625236, 
+      "WAIT_LINK"
+    ], 
+    [
+      1791044558.625482, 
+      "LAND"
+    ], 
+    [
+      1791044565.77396, 
+      "NORMAL"
+    ]
+  ], 
+  "land_tx": 1, 
+  "imu_rate_hz": 99.55154267579788, 
+  "physical_motion": false, 
+  "artifacts": "/tmp/vio_homing_px4_bench/run_1791044383488699", 
+  "wifi": false, 
+  "checks": [
+    "empty path and absent odometry produce no MAVLink commands", 
+    "stale odometry stops setpoint TX", 
+    "closed MAVLink connection stops TX and reconnects with TIMESYNC", 
+    "heartbeat recovery during RETURN stops MAVLink setpoints", 
+    "ordered ROS targets confirmed in PX4 trajectory_setpoint", 
+    "WAIT_LINK recovery cancels LAND beyond the old 60-second deadline", 
+    "ordered ROS targets confirmed in PX4 trajectory_setpoint", 
+    "IMU about 100 Hz and ODOMETRY about 30 Hz preserved", 
+    "LAND received by PX4: vehicle_command, vehicle_command_ack and MAVLink ACK", 
+    "repeated LAND sends one command per episode", 
+    "manager restart stops old goals and does not replay LAND"
+  ], 
+  "px4_position_proofs": [
+    {
+      "expected": [
+        4.0, 
+        0.0, 
+        0.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener vehicle_visual_odometry 1\n\nTOPIC: vehicle_visual_odometry\n vehicle_visual_odometry\n    timestamp: 4906438144 (0.008859 seconds ago)\n    timestamp_sample: 4906438143 (1 us before timestamp)\n    position: [4.00000, 0.00000, 0.00000]\n    q: [1.00000, 0.00000, 0.00000, 0.00000] (Roll: 0.0 deg, Pitch: -0.0 deg, Yaw: 0.0 deg)\n    velocity: [0.00000, 0.00000, 0.00000]\n    angular_velocity: [0.00000, 0.00000, 0.00000]\n    position_variance: [nan, 0.00000, 0.00000]\n    orientation_variance: [0.00000, 0.00000, 0.00000]\n    velocity_variance: [nan, 0.00000, 0.00000]\n    pose_frame: 2\n    velocity_frame: 3\n    reset_counter: 0\n    quality: 0\n\nnsh> \u001b[K", 
+      "command": "listener vehicle_visual_odometry 1", 
+      "phase": "return_cancel_stale_and_mavlink_loss", 
+      "actual": [
+        4.0, 
+        0.0, 
+        0.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -17.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 4925824968 (0.038313 seconds ago)\n    position: [10.00000, -17.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "wait_link_cancel_old_timer", 
+      "actual": [
+        10.0, 
+        -17.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -18.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 4926768468 (0.027272 seconds ago)\n    position: [10.00000, -18.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "wait_link_cancel_old_timer", 
+      "actual": [
+        10.0, 
+        -18.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -19.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 4927658859 (0.044909 seconds ago)\n    position: [10.00000, -19.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "wait_link_cancel_old_timer", 
+      "actual": [
+        10.0, 
+        -19.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -20.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 4928571579 (0.043418 seconds ago)\n    position: [10.00000, -20.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "wait_link_cancel_old_timer", 
+      "actual": [
+        10.0, 
+        -20.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -17.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 5000360744 (0.051043 seconds ago)\n    position: [10.00000, -17.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "full_return_wait_land", 
+      "actual": [
+        10.0, 
+        -17.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -18.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 5001268489 (0.028223 seconds ago)\n    position: [10.00000, -18.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "full_return_wait_land", 
+      "actual": [
+        10.0, 
+        -18.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -19.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 5002146490 (0.028251 seconds ago)\n    position: [10.00000, -19.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "full_return_wait_land", 
+      "actual": [
+        10.0, 
+        -19.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        10.0, 
+        -20.0, 
+        2.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener trajectory_setpoint 1\n\nTOPIC: trajectory_setpoint\n trajectory_setpoint\n    timestamp: 5003032501 (0.028713 seconds ago)\n    position: [10.00000, -20.00000, 2.00000]\n    velocity: [nan, nan, nan]\n    acceleration: [nan, nan, nan]\n    jerk: [0.00000, 0.00000, 0.00000]\n    yaw: nan\n    yawspeed: nan\nnsh> \u001b[K", 
+      "command": "listener trajectory_setpoint 1", 
+      "phase": "full_return_wait_land", 
+      "actual": [
+        10.0, 
+        -20.0, 
+        2.0
+      ]
+    }, 
+    {
+      "expected": [
+        0.0, 
+        0.0, 
+        0.0
+      ], 
+      "text": "\nNuttShell (NSH) NuttX-11.0.0\nnsh> \u001b[Klistener vehicle_visual_odometry 1\n\nTOPIC: vehicle_visual_odometry\n vehicle_visual_odometry\n    timestamp: 5008961696 (0.012604 seconds ago)\n    timestamp_sample: 5008961694 (2 us before timestamp)\n    position: [0.00000, 0.00000, 0.00000]\n    q: [1.00000, 0.00000, 0.00000, 0.00000] (Roll: 0.0 deg, Pitch: -0.0 deg, Yaw: 0.0 deg)\n    velocity: [0.00000, 0.00000, 0.00000]\n    angular_velocity: [0.00000, 0.00000, 0.00000]\n    position_variance: [nan, 0.00000, 0.00000]\n    orientation_variance: [0.00000, 0.00000, 0.00000]\n    velocity_variance: [nan, 0.00000, 0.00000]\n    pose_frame: 2\n    velocity_frame: 3\n    reset_counter: 0\n    quality: 0\n\nnsh> \u001b[K", 
+      "command": "listener vehicle_visual_odometry 1", 
+      "phase": "full_return_wait_land", 
+      "actual": [
+        0.0, 
+        0.0, 
+        0.0
+      ]
+    }
+  ], 
+  "passed": true, 
+  "final_status": {
+    "link_alive": true, 
+    "land_tx": 1, 
+    "last_setpoint_ned": [
+      10.0, 
+      -20.0, 
+      2.0
+    ], 
+    "armed": false, 
+    "imu_rx": 17985, 
+    "enabled": true, 
+    "setpoint_tx": 1260, 
+    "odom_tx": 5130, 
+    "session": "05b8249a-7fd6-42fb-9a92-d273200ed9fb", 
+    "homing_state": "NORMAL", 
+    "land_ack": "MAV_RESULT_ACCEPTED", 
+    "timesync": true, 
+    "alignment_valid": true, 
+    "odom_tx_errors": 0, 
+    "odom_rx": 5290
+  }, 
+  "wait_link_seconds": 60.029620885849
+}

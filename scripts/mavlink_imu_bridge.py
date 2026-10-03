@@ -12,9 +12,10 @@ import rospy
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 from pymavlink import mavutil
+from vio_homing.mavlink_homing_adapter import MavlinkHomingAdapter
 
 
-class MavlinkImuBridge(object):
+class MavlinkImuBridge(MavlinkHomingAdapter):
 
     def __init__(self):
         self.port = rospy.get_param(
@@ -70,7 +71,7 @@ class MavlinkImuBridge(object):
         self.master = None
 
         # Protect all MAVLink TX operations.
-        self.tx_lock = threading.Lock()
+        self.tx_lock = threading.RLock()
 
         # Protect TIMESYNC data shared between threads.
         self.timesync_lock = threading.Lock()
@@ -96,6 +97,8 @@ class MavlinkImuBridge(object):
             Imu,
             queue_size=200
         )
+
+        self.init_homing_adapter()
 
         self.odom_sub = rospy.Subscriber(
             self.odom_topic,
@@ -134,6 +137,8 @@ class MavlinkImuBridge(object):
         ) // 2
 
     def connect(self):
+        while time.time() < self.reconnect_not_before and not rospy.is_shutdown():
+            time.sleep(0.1)
         self.reset_timesync()
 
         rospy.loginfo(
@@ -163,6 +168,9 @@ class MavlinkImuBridge(object):
                 "PX4 heartbeat timeout"
             )
 
+        self.master.target_component = heartbeat.get_srcComponent()
+        self.heartbeat_received(heartbeat)
+
         rospy.loginfo(
             "PX4 connected: system=%d component=%d",
             self.master.target_system,
@@ -170,13 +178,15 @@ class MavlinkImuBridge(object):
         )
 
     def close(self):
-        if self.master is not None:
-            try:
-                self.master.close()
-            except Exception:
-                pass
-
-        self.master = None
+        with self.control_lock:
+            self.homing_disconnected()
+            with self.tx_lock:
+                if self.master is not None:
+                    try:
+                        self.master.close()
+                    except Exception:
+                        pass
+                self.master = None
 
     def send_timesync_request(self):
         now_ns = self.ros_now_ns()
@@ -422,6 +432,7 @@ class MavlinkImuBridge(object):
 
     def odom_callback(self, msg):
         self.odom_rx_count += 1
+        self.homing_odom_received(msg)
 
         if self.master is None:
             return
@@ -517,6 +528,8 @@ class MavlinkImuBridge(object):
 
         try:
             with self.tx_lock:
+                if self.master is None:
+                    return
                 try:
                     self.master.mav.odometry_send(
                         *(
@@ -626,6 +639,9 @@ class MavlinkImuBridge(object):
 
         while not rospy.is_shutdown():
             now = time.time()
+            if self.master is None or not self.mavlink_alive():
+                raise RuntimeError('PX4 heartbeat/connection lost')
+            self.tick_homing_io()
 
             if self.timesync_rate > 0:
                 timesync_period = (
@@ -669,6 +685,15 @@ class MavlinkImuBridge(object):
                 self.publish_imu(
                     msg
                 )
+
+            elif msg_type == 'HEARTBEAT' and msg.get_srcSystem() == self.master.target_system:
+                self.heartbeat_received(msg)
+
+            elif msg_type == 'COMMAND_ACK' and msg.get_srcSystem() == self.master.target_system:
+                self.command_ack_received(msg)
+
+            elif msg_type == 'SERIAL_CONTROL' and self.bench_enabled:
+                self.serial_control_received(msg)
 
             self.print_status()
 

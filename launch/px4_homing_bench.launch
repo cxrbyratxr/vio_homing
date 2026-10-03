@@ -1,0 +1,26 @@
+<launch>
+  <!-- Hardware bench: use a separate ROS master; pause the old UART bridge. -->
+  <arg name="serial_port" default="/dev/ttyTHS1"/>
+  <arg name="run_test" default="true"/>
+  <node pkg="vio_homing" type="mavlink_imu_bridge.py" name="px4_bench_bridge" output="screen">
+    <param name="serial_port" value="$(arg serial_port)"/>
+    <param name="baudrate" value="115200"/>
+    <param name="enable_homing_commands" value="true"/>
+    <param name="enable_bench_console" value="true"/>
+    <!-- Deliberate synthetic frame alignment, not a calibration for real VIO. -->
+    <param name="frd_to_ned_alignment_valid" value="true"/>
+    <param name="frd_to_ned_yaw_deg" value="90.0"/>
+    <rosparam param="frd_origin_ned">[10.0, -20.0, 2.0]</rosparam>
+  </node>
+  <node pkg="vio_homing" type="wifi_link_monitor.py" name="px4_bench_link_monitor" output="screen">
+    <param name="bind_address" value="127.0.0.1"/>
+    <param name="port" value="15053"/>
+  </node>
+  <node pkg="vio_homing" type="trajectory_recorder.py" name="px4_bench_recorder" output="screen"/>
+  <node pkg="vio_homing" type="homing_manager.py" name="px4_bench_manager"
+        output="screen" respawn="true" respawn_delay="1.0"/>
+  <node if="$(arg run_test)" pkg="vio_homing" type="px4_homing_bench.py"
+        name="px4_homing_bench_test" output="screen" required="true">
+    <param name="heartbeat_port" value="15053"/>
+  </node>
+</launch>
