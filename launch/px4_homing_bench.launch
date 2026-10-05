@@ -17,10 +17,8 @@
     <param name="port" value="15053"/>
   </node>
   <node pkg="vio_homing" type="trajectory_recorder.py" name="px4_bench_recorder" output="screen"/>
-  <node pkg="vio_homing" type="homing_manager.py" name="px4_bench_manager"
-        output="screen" respawn="true" respawn_delay="1.0"/>
-  <node if="$(arg run_test)" pkg="vio_homing" type="px4_homing_bench.py"
-        name="px4_homing_bench_test" output="screen" required="true">
+  <node pkg="vio_homing" type="homing_manager.py" name="px4_bench_manager" output="screen" respawn="true" respawn_delay="1.0"/>
+  <node if="$(arg run_test)" pkg="vio_homing" type="px4_homing_bench.py" name="px4_homing_bench_test" output="screen" required="true">
     <param name="heartbeat_port" value="15053"/>
   </node>
 </launch>

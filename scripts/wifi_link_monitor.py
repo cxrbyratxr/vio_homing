@@ -19,7 +19,9 @@ class WifiLinkMonitor(object):
         self.ok_timeout = float(rospy.get_param("~ok_timeout", 0.5))
         self.lost_timeout = float(rospy.get_param("~lost_timeout", 3.0))
         self.publish_rate = float(rospy.get_param("~publish_rate", 20.0))
-        self.expected_prefix = rospy.get_param("~heartbeat_prefix", "VIO_HOMING_HEARTBEAT")
+        self.expected_prefix = rospy.get_param(
+            "~heartbeat_prefix", "VIO_HOMING_HEARTBEAT"
+        )
 
         self.last_packet_time = None
         self.last_sender = None
@@ -27,9 +29,15 @@ class WifiLinkMonitor(object):
         self.current_state = "WAITING"
         self.previous_state = None
 
-        self.state_pub = rospy.Publisher("/vio_homing/link_state", String, queue_size=10)
-        self.alive_pub = rospy.Publisher("/vio_homing/link_alive", Bool, queue_size=10)
-        self.age_pub = rospy.Publisher("/vio_homing/link_age", Float32, queue_size=10)
+        self.state_pub = rospy.Publisher(
+            "/vio_homing/link_state", String, queue_size=10
+        )
+        self.alive_pub = rospy.Publisher(
+            "/vio_homing/link_alive", Bool, queue_size=10
+        )
+        self.age_pub = rospy.Publisher(
+            "/vio_homing/link_age", Float32, queue_size=10
+        )
         self.packet_count_pub = rospy.Publisher(
             "/vio_homing/link_packet_count", Float32, queue_size=10
         )
@@ -39,8 +47,14 @@ class WifiLinkMonitor(object):
         self.sock.bind((self.bind_address, self.port))
         self.sock.setblocking(False)
 
-        rospy.loginfo("WiFi link monitor listening on UDP %s:%d", self.bind_address, self.port)
-        rospy.loginfo("LINK_OK < %.2f s, LINK_LOST >= %.2f s", self.ok_timeout, self.lost_timeout)
+        rospy.loginfo(
+            "WiFi link monitor listening on UDP %s:%d", self.bind_address,
+            self.port
+        )
+        rospy.loginfo(
+            "LINK_OK < %.2f s, LINK_LOST >= %.2f s", self.ok_timeout,
+            self.lost_timeout
+        )
 
     def receive_packets(self):
         while True:

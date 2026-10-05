@@ -28,9 +28,13 @@ class UsbCameraNode(object):
         self.max_grab_failures = int(rospy.get_param("~max_grab_failures", 10))
         self.stats_period = float(rospy.get_param("~stats_period", 5.0))
         image_topic = rospy.get_param("~image_topic", "/camera/image_raw")
-        info_topic = rospy.get_param("~camera_info_topic", "/camera/camera_info")
+        info_topic = rospy.get_param(
+            "~camera_info_topic", "/camera/camera_info"
+        )
 
-        self.camera_info = self.load_camera_info(rospy.get_param("~camera_info_file", ""))
+        self.camera_info = self.load_camera_info(
+            rospy.get_param("~camera_info_file", "")
+        )
         self.image_pub = rospy.Publisher(image_topic, Image, queue_size=1)
         self.info_pub = rospy.Publisher(info_topic, CameraInfo, queue_size=1)
 
@@ -42,7 +46,9 @@ class UsbCameraNode(object):
     def load_camera_info(self, path):
         """Читает yaml в формате camera_calibration."""
         if not path:
-            rospy.logwarn("camera_info_file not set, camera_info will not be published")
+            rospy.logwarn(
+                "camera_info_file not set, camera_info will not be published"
+            )
             return None
         try:
             with open(path) as f:
@@ -74,7 +80,9 @@ class UsbCameraNode(object):
     def open_camera(self):
         # V4L2 backend в OpenCV 4.1 надёжнее открывает устройство по индексу
         m = re.match(r"^/dev/video(\d+)$", self.device)
-        cap = cv2.VideoCapture(int(m.group(1)) if m else self.device, cv2.CAP_V4L2)
+        cap = cv2.VideoCapture(
+            int(m.group(1)) if m else self.device, cv2.CAP_V4L2
+        )
         if not cap.isOpened():
             rospy.logerr("Failed to open camera %s", self.device)
             return None
@@ -84,7 +92,8 @@ class UsbCameraNode(object):
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         cap.set(cv2.CAP_PROP_FPS, self.fps)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # не копим кадры в драйвере, нужен самый свежий
+        # не копим кадры в драйвере, нужен самый свежий
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         code = int(cap.get(cv2.CAP_PROP_FOURCC))
         fourcc = "".join(chr((code >> 8 * i) & 0xFF) for i in range(4))
@@ -107,7 +116,9 @@ class UsbCameraNode(object):
         if self.grayscale and frame.ndim == 3:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        msg = self.bridge.cv2_to_imgmsg(frame, "mono8" if frame.ndim == 2 else "bgr8")
+        msg = self.bridge.cv2_to_imgmsg(
+            frame, "mono8" if frame.ndim == 2 else "bgr8"
+        )
         msg.header.stamp = stamp
         msg.header.frame_id = self.frame_id
         msg.header.seq = self.frame_count
@@ -131,13 +142,18 @@ class UsbCameraNode(object):
 
             # stamp сразу после grab(), до декодирования кадра
             ok = self.cap.grab()
-            stamp = rospy.Time.now() - rospy.Duration.from_sec(self.time_offset)
+            stamp = rospy.Time.now() - rospy.Duration.from_sec(
+                self.time_offset
+            )
             frame = self.cap.retrieve()[1] if ok else None
 
             if frame is None:
                 failures += 1
                 if failures >= self.max_grab_failures:
-                    rospy.logerr("Camera %s: %d failed grabs, reopening", self.device, failures)
+                    rospy.logerr(
+                        "Camera %s: %d failed grabs, reopening", self.device,
+                        failures
+                    )
                     self.close_camera()
                     rospy.sleep(self.reconnect_delay)
                 continue
@@ -155,7 +171,8 @@ class UsbCameraNode(object):
             elapsed = time.time() - stats_start
             if elapsed >= self.stats_period:
                 rate = stats_count / elapsed
-                log = rospy.logwarn if rate < 20.0 else rospy.loginfo  # ТЗ: VO >= 20 Гц
+                # ТЗ: VO >= 20 Гц.
+                log = rospy.logwarn if rate < 20.0 else rospy.loginfo
                 log("Camera rate %.1f Hz, frames=%d", rate, self.frame_count)
                 stats_count, stats_start = 0, time.time()
 

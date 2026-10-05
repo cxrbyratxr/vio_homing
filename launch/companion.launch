@@ -1,96 +1,77 @@
 <launch>
-
   <!-- ============================== -->
   <!-- MAVLink / Pixhawk             -->
   <!-- ============================== -->
-
-  <arg name="serial_port" default="/dev/ttyTHS1" />
-  <arg name="baudrate" default="115200" />
-  <arg name="imu_topic" default="/pixhawk/imu" />
-  <arg name="imu_frame_id" default="imu_link" />
-  <arg name="odom_topic" default="/vio/odom_frd" />
-  <arg name="enable_homing_commands" default="false" />
-  <arg name="frd_to_ned_alignment_valid" default="false" />
-  <arg name="frd_to_ned_yaw_deg" default="0.0" />
-  <arg name="frd_origin_ned" default="[0.0, 0.0, 0.0]" />
-
-  <node pkg="vio_homing" type="mavlink_imu_bridge.py" name="mavlink_imu_bridge"
-        output="screen" respawn="true" respawn_delay="3.0">
-    <param name="serial_port" value="$(arg serial_port)" />
-    <param name="baudrate" value="$(arg baudrate)" />
-    <param name="imu_topic" value="$(arg imu_topic)" />
-    <param name="imu_frame_id" value="$(arg imu_frame_id)" />
-    <param name="odom_topic" value="$(arg odom_topic)" />
-    <param name="odom_quality" value="0" />
-    <param name="enable_homing_commands" value="$(arg enable_homing_commands)" />
-    <param name="frd_to_ned_alignment_valid" value="$(arg frd_to_ned_alignment_valid)" />
-    <param name="frd_to_ned_yaw_deg" value="$(arg frd_to_ned_yaw_deg)" />
+  <arg name="serial_port" default="/dev/ttyTHS1"/>
+  <arg name="baudrate" default="115200"/>
+  <arg name="imu_topic" default="/pixhawk/imu"/>
+  <arg name="imu_frame_id" default="imu_link"/>
+  <arg name="odom_topic" default="/vio/odom_frd"/>
+  <arg name="enable_homing_commands" default="false"/>
+  <arg name="frd_to_ned_alignment_valid" default="false"/>
+  <arg name="frd_to_ned_yaw_deg" default="0.0"/>
+  <arg name="frd_origin_ned" default="[0.0, 0.0, 0.0]"/>
+  <node pkg="vio_homing" type="mavlink_imu_bridge.py" name="mavlink_imu_bridge" output="screen" respawn="true" respawn_delay="3.0">
+    <param name="serial_port" value="$(arg serial_port)"/>
+    <param name="baudrate" value="$(arg baudrate)"/>
+    <param name="imu_topic" value="$(arg imu_topic)"/>
+    <param name="imu_frame_id" value="$(arg imu_frame_id)"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="odom_quality" value="0"/>
+    <param name="enable_homing_commands" value="$(arg enable_homing_commands)"/>
+    <param name="frd_to_ned_alignment_valid" value="$(arg frd_to_ned_alignment_valid)"/>
+    <param name="frd_to_ned_yaw_deg" value="$(arg frd_to_ned_yaw_deg)"/>
     <rosparam param="frd_origin_ned" subst_value="true">$(arg frd_origin_ned)</rosparam>
-    <param name="timesync_rate" value="10.0" />
-    <param name="max_timesync_rtt_ms" value="50.0" />
+    <param name="timesync_rate" value="10.0"/>
+    <param name="max_timesync_rtt_ms" value="50.0"/>
   </node>
-
-
   <!-- ============================== -->
   <!-- Ground Wi-Fi link monitor     -->
   <!-- ============================== -->
-
-  <node pkg="vio_homing" type="wifi_link_monitor.py" name="wifi_link_monitor"
-        output="screen" respawn="true" respawn_delay="2.0">
-    <param name="bind_address" value="0.0.0.0" />
-    <param name="port" value="15050" />
-    <param name="ok_timeout" value="0.5" />
-    <param name="lost_timeout" value="3.0" />
-    <param name="publish_rate" value="20.0" />
-    <param name="heartbeat_prefix" value="VIO_HOMING_HEARTBEAT" />
+  <node pkg="vio_homing" type="wifi_link_monitor.py" name="wifi_link_monitor" output="screen" respawn="true" respawn_delay="2.0">
+    <param name="bind_address" value="0.0.0.0"/>
+    <param name="port" value="15050"/>
+    <param name="ok_timeout" value="0.5"/>
+    <param name="lost_timeout" value="3.0"/>
+    <param name="publish_rate" value="20.0"/>
+    <param name="heartbeat_prefix" value="VIO_HOMING_HEARTBEAT"/>
   </node>
-
-
   <!-- ============================== -->
   <!-- Trajectory recorder           -->
   <!-- ============================== -->
-
-  <node pkg="vio_homing" type="trajectory_recorder.py" name="trajectory_recorder"
-        output="screen" respawn="true" respawn_delay="2.0">
-    <param name="odom_topic" value="$(arg odom_topic)" />
-    <param name="link_state_topic" value="/vio_homing/link_state" />
-    <param name="min_point_distance" value="0.25" />
-    <param name="max_point_interval" value="1.0" />
-    <param name="max_points" value="20000" />
-    <param name="path_publish_rate" value="1.0" />
+  <node pkg="vio_homing" type="trajectory_recorder.py" name="trajectory_recorder" output="screen" respawn="true" respawn_delay="2.0">
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="link_state_topic" value="/vio_homing/link_state"/>
+    <param name="min_point_distance" value="0.25"/>
+    <param name="max_point_interval" value="1.0"/>
+    <param name="max_points" value="20000"/>
+    <param name="path_publish_rate" value="1.0"/>
   </node>
-
-
   <!-- ============================== -->
   <!-- USB camera (downward)         -->
   <!-- ============================== -->
-
   <!-- Current bench has no camera; explicitly enable after connecting it. -->
-  <arg name="enable_camera" default="false" />
-  <arg name="camera_device" default="/dev/video0" />
-  <arg name="camera_width" default="640" />
-  <arg name="camera_height" default="480" />
-  <arg name="camera_fps" default="30" />
-  <arg name="camera_fourcc" default="MJPG" />
-  <arg name="camera_info_file" default="" />
-
-  <node if="$(arg enable_camera)" pkg="vio_homing" type="usb_camera_node.py" name="usb_camera"
-        output="screen" respawn="true" respawn_delay="3.0">
-    <param name="device" value="$(arg camera_device)" />
-    <param name="width" value="$(arg camera_width)" />
-    <param name="height" value="$(arg camera_height)" />
-    <param name="fps" value="$(arg camera_fps)" />
-    <param name="fourcc" value="$(arg camera_fourcc)" />
-    <param name="grayscale" value="true" />
-    <param name="frame_id" value="camera_link" />
-    <param name="image_topic" value="/camera/image_raw" />
-    <param name="camera_info_topic" value="/camera/camera_info" />
-    <param name="camera_info_file" value="$(arg camera_info_file)" />
+  <arg name="enable_camera" default="false"/>
+  <arg name="camera_device" default="/dev/video0"/>
+  <arg name="camera_width" default="640"/>
+  <arg name="camera_height" default="480"/>
+  <arg name="camera_fps" default="30"/>
+  <arg name="camera_fourcc" default="MJPG"/>
+  <arg name="camera_info_file" default=""/>
+  <node if="$(arg enable_camera)" pkg="vio_homing" type="usb_camera_node.py" name="usb_camera" output="screen" respawn="true" respawn_delay="3.0">
+    <param name="device" value="$(arg camera_device)"/>
+    <param name="width" value="$(arg camera_width)"/>
+    <param name="height" value="$(arg camera_height)"/>
+    <param name="fps" value="$(arg camera_fps)"/>
+    <param name="fourcc" value="$(arg camera_fourcc)"/>
+    <param name="grayscale" value="true"/>
+    <param name="frame_id" value="camera_link"/>
+    <param name="image_topic" value="/camera/image_raw"/>
+    <param name="camera_info_topic" value="/camera/camera_info"/>
+    <param name="camera_info_file" value="$(arg camera_info_file)"/>
   </node>
-
   <!-- Homing outputs; the shared bridge can transport them when explicitly enabled. -->
-  <node pkg="vio_homing" type="homing_manager.py" name="homing_manager"
-        output="screen" respawn="true" respawn_delay="2.0">
+  <node pkg="vio_homing" type="homing_manager.py" name="homing_manager" output="screen" respawn="true" respawn_delay="2.0">
     <param name="odom_topic" value="$(arg odom_topic)"/>
     <param name="arrival_radius" value="0.4"/>
     <param name="wait_link_seconds" value="60.0"/>

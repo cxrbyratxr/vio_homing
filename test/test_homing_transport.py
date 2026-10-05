@@ -3,6 +3,7 @@ from vio_homing.homing_transport import FrdToNed, HomingTransport
 
 
 class TransportTests(unittest.TestCase):
+
     def ready(self):
         t = HomingTransport(FrdToNed(90, (10, -20, 2)), True, True)
         t.set_session('manager-one')
@@ -28,9 +29,10 @@ class TransportTests(unittest.TestCase):
 
     def test_missing_stale_wrong_frame_and_nan_odometry(self):
         t = self.ready()
-        for point, frame, stamp, received in [((4, 0, 0), 'local_frd', 90, 100),
-                                              ((4, 0, 0), 'map', 100, 100),
-                                              ((float('nan'), 0, 0), 'local_frd', 100, 100)]:
+        for point, frame, stamp, received in [
+            ((4, 0, 0), 'local_frd', 90, 100), ((4, 0, 0), 'map', 100, 100),
+            ((float('nan'), 0, 0), 'local_frd', 100, 100)
+        ]:
             t.set_odom(point, frame, stamp, received)
             self.assertIsNone(t.next_setpoint(100.1, True, True))
         t.odom_time = None

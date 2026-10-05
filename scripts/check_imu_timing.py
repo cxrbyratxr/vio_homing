@@ -24,7 +24,7 @@ def analyze():
         dt.append(timestamps[i] - timestamps[i - 1])
 
     mean = sum(dt) / len(dt)
-    variance = sum((x - mean) ** 2 for x in dt) / len(dt)
+    variance = sum((x - mean)**2 for x in dt) / len(dt)
     std = math.sqrt(variance)
     minimum = min(dt)
     maximum = max(dt)

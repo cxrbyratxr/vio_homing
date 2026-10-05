@@ -18,11 +18,19 @@ class TrajectoryRecorder(object):
 
     def __init__(self):
         self.odom_topic = rospy.get_param("~odom_topic", "/vio/odom_frd")
-        self.link_state_topic = rospy.get_param("~link_state_topic", "/vio_homing/link_state")
-        self.min_point_distance = float(rospy.get_param("~min_point_distance", 0.25))
-        self.max_point_interval = float(rospy.get_param("~max_point_interval", 1.0))
+        self.link_state_topic = rospy.get_param(
+            "~link_state_topic", "/vio_homing/link_state"
+        )
+        self.min_point_distance = float(
+            rospy.get_param("~min_point_distance", 0.25)
+        )
+        self.max_point_interval = float(
+            rospy.get_param("~max_point_interval", 1.0)
+        )
         self.max_points = int(rospy.get_param("~max_points", 20000))
-        self.path_publish_rate = float(rospy.get_param("~path_publish_rate", 1.0))
+        self.path_publish_rate = float(
+            rospy.get_param("~path_publish_rate", 1.0)
+        )
 
         self.lock = threading.Lock()
         self.points = []
@@ -37,12 +45,17 @@ class TrajectoryRecorder(object):
         self.recorded_count = 0
         self.loss_count = 0
 
-        self.trajectory_pub = rospy.Publisher("/vio_homing/trajectory", Path, queue_size=1)
+        self.trajectory_pub = rospy.Publisher(
+            "/vio_homing/trajectory", Path, queue_size=1
+        )
         self.return_path_pub = rospy.Publisher(
             "/vio_homing/return_path", Path, queue_size=1, latch=True
         )
         self.last_good_pose_pub = rospy.Publisher(
-            "/vio_homing/last_good_link_pose", PoseStamped, queue_size=1, latch=True
+            "/vio_homing/last_good_link_pose",
+            PoseStamped,
+            queue_size=1,
+            latch=True
         )
         self.return_ready_pub = rospy.Publisher(
             "/vio_homing/return_ready", Bool, queue_size=1, latch=True
@@ -50,17 +63,23 @@ class TrajectoryRecorder(object):
         self.point_count_pub = rospy.Publisher(
             "/vio_homing/trajectory_point_count", UInt32, queue_size=10
         )
-        self.status_pub = rospy.Publisher("/vio_homing/trajectory_status", String, queue_size=10)
+        self.status_pub = rospy.Publisher(
+            "/vio_homing/trajectory_status", String, queue_size=10
+        )
         self.odom_sub = rospy.Subscriber(
             self.odom_topic, Odometry, self.odom_callback, queue_size=100
         )
         self.link_sub = rospy.Subscriber(
-            self.link_state_topic, String, self.link_state_callback, queue_size=20
+            self.link_state_topic,
+            String,
+            self.link_state_callback,
+            queue_size=20
         )
 
         if self.path_publish_rate > 0:
             self.publish_timer = rospy.Timer(
-                rospy.Duration(1.0 / self.path_publish_rate), self.publish_periodic
+                rospy.Duration(1.0 / self.path_publish_rate),
+                self.publish_periodic
             )
         else:
             self.publish_timer = None
@@ -170,7 +189,10 @@ class TrajectoryRecorder(object):
 
     def build_return_path(self):
         if self.last_good_index is None:
-            rospy.logerr("Cannot build return path: " "no LINK_OK point has been recorded")
+            rospy.logerr(
+                "Cannot build return path: "
+                "no LINK_OK point has been recorded"
+            )
 
             self.return_ready = False
             self.return_ready_pub.publish(Bool(data=False))
@@ -178,7 +200,8 @@ class TrajectoryRecorder(object):
             return
 
         if len(self.points) == 0:
-            rospy.logerr("Cannot build return path: " "trajectory is empty")
+            rospy.logerr("Cannot build return path: "
+                         "trajectory is empty")
 
             self.return_ready = False
             self.return_ready_pub.publish(Bool(data=False))
@@ -190,8 +213,9 @@ class TrajectoryRecorder(object):
         if start_index >= len(self.points):
             start_index = len(self.points) - 1
 
-        forward_segment = self.points[start_index:]
-        reverse_segment = list(reversed(forward_segment))
+        # Slice once, then reverse the private list without a second copy.
+        reverse_segment = self.points[start_index:]
+        reverse_segment.reverse()
         path = Path()
         path.header.stamp = rospy.Time.now()
         path.header.frame_id = self.frame_id
@@ -203,7 +227,9 @@ class TrajectoryRecorder(object):
         self.return_ready_pub.publish(Bool(data=True))
 
         rospy.logerr(
-            "RETURN PATH READY: " "%d points, target index=%d, " "total trajectory=%d",
+            "RETURN PATH READY: "
+            "%d points, target index=%d, "
+            "total trajectory=%d",
             len(reverse_segment),
             start_index,
             len(self.points),
@@ -213,7 +239,8 @@ class TrajectoryRecorder(object):
             position = self.last_good_pose.pose.position
 
             rospy.logerr(
-                "LAST GOOD LINK POINT: " "x=%.3f y=%.3f z=%.3f", position.x, position.y, position.z
+                "LAST GOOD LINK POINT: "
+                "x=%.3f y=%.3f z=%.3f", position.x, position.y, position.z
             )
 
     def link_state_callback(self, msg):
@@ -226,7 +253,9 @@ class TrajectoryRecorder(object):
                 return
 
             self.link_state = new_state
-            rospy.loginfo("Recorder link state: %s -> %s", old_state, new_state)
+            rospy.loginfo(
+                "Recorder link state: %s -> %s", old_state, new_state
+            )
 
             if new_state == "LINK_OK":
                 if self.return_ready:

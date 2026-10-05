@@ -1,29 +1,22 @@
-<?xml version="1.0"?>
+<?xml version="1.0" ?>
 <package format="2">
   <name>vio_homing</name>
   <version>0.1.0</version>
-
   <description>
     VIO-based homing system for PX4 using VINS-Fusion and MAVLink.
   </description>
-
   <maintainer email="jetson@example.com">VIO Homing Team</maintainer>
-
   <license>MIT</license>
-
   <buildtool_depend>catkin</buildtool_depend>
-
   <depend>rospy</depend>
   <depend>sensor_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>std_msgs</depend>
-
   <exec_depend>rosnode</exec_depend>
   <exec_depend>python-yaml</exec_depend>
   <test_depend>rostest</test_depend>
   <test_depend>python-nose</test_depend>
-
   <export/>
 </package>

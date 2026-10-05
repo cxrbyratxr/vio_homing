@@ -26,7 +26,9 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         self.odom_topic = rospy.get_param("~odom_topic", "/vio/odom_frd")
         self.odom_quality = int(rospy.get_param("~odom_quality", 0))
         self.timesync_rate = float(rospy.get_param("~timesync_rate", 10.0))
-        self.max_rtt_ns = int(float(rospy.get_param("~max_timesync_rtt_ms", 50.0)) * 1000000.0)
+        self.max_rtt_ns = int(
+            float(rospy.get_param("~max_timesync_rtt_ms", 50.0)) * 1000000.0
+        )
 
         self.master = None
         # Protect all MAVLink TX operations.
@@ -80,14 +82,21 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         return (values[middle - 1] + values[middle]) // 2
 
     def connect(self):
-        while time.time() < self.reconnect_not_before and not rospy.is_shutdown():
+        while time.time(
+        ) < self.reconnect_not_before and not rospy.is_shutdown():
             time.sleep(0.1)
         self.reset_timesync()
 
-        rospy.loginfo("Opening MAVLink connection: %s @ %d", self.port, self.baud)
+        rospy.loginfo(
+            "Opening MAVLink connection: %s @ %d", self.port, self.baud
+        )
 
         self.master = mavutil.mavlink_connection(
-            self.port, baud=self.baud, robust_parsing=True, source_system=245, source_component=191
+            self.port,
+            baud=self.baud,
+            robust_parsing=True,
+            source_system=245,
+            source_component=191
         )
 
         rospy.loginfo("Waiting for PX4 heartbeat...")
@@ -250,7 +259,9 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         orientation = msg.pose.pose.orientation
         linear = msg.twist.twist.linear
         angular = msg.twist.twist.angular
-        quaternion = [orientation.w, orientation.x, orientation.y, orientation.z]
+        quaternion = [
+            orientation.w, orientation.x, orientation.y, orientation.z
+        ]
         pose_covariance = self.covariance_to_mavlink(msg.pose.covariance)
         velocity_covariance = self.covariance_to_mavlink(msg.twist.covariance)
         frame_id = mavutil.mavlink.MAV_FRAME_LOCAL_FRD
@@ -281,7 +292,9 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
                 if self.master is None:
                     return
                 try:
-                    self.master.mav.odometry_send(*(base_args + [self.odom_quality]))
+                    self.master.mav.odometry_send(
+                        *(base_args + [self.odom_quality])
+                    )
 
                 except TypeError:
                     self.master.mav.odometry_send(*base_args)
@@ -313,7 +326,8 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
                 sample_count = len(self.offset_samples)
 
             rospy.loginfo(
-                "TIMESYNC OK: samples=%d offset=%.3f ms", sample_count, clock_offset_ns / 1000000.0
+                "TIMESYNC OK: samples=%d offset=%.3f ms", sample_count,
+                clock_offset_ns / 1000000.0
             )
 
         imu_delta = self.imu_count - self.last_imu_count
@@ -321,7 +335,10 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         odom_tx_delta = self.odom_tx_count - self.last_odom_tx_count
 
         rospy.loginfo(
-            "Traffic: IMU RX=%d (+%d) " "ODOM RX=%d (+%d) " "ODOM TX=%d (+%d) " "TX ERR=%d",
+            "Traffic: IMU RX=%d (+%d) "
+            "ODOM RX=%d (+%d) "
+            "ODOM TX=%d (+%d) "
+            "TX ERR=%d",
             self.imu_count,
             imu_delta,
             self.odom_rx_count,
@@ -368,10 +385,12 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
             elif msg_type == "HIGHRES_IMU":
                 self.publish_imu(msg)
 
-            elif msg_type == 'HEARTBEAT' and msg.get_srcSystem() == self.master.target_system:
+            elif msg_type == 'HEARTBEAT' and msg.get_srcSystem(
+            ) == self.master.target_system:
                 self.heartbeat_received(msg)
 
-            elif msg_type == 'COMMAND_ACK' and msg.get_srcSystem() == self.master.target_system:
+            elif msg_type == 'COMMAND_ACK' and msg.get_srcSystem(
+            ) == self.master.target_system:
                 self.command_ack_received(msg)
 
             elif msg_type == 'SERIAL_CONTROL' and self.bench_enabled:

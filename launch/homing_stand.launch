@@ -3,7 +3,6 @@
   <arg name="run_simulator" default="true"/>
   <arg name="heartbeat_port" default="15051"/>
   <arg name="result_file" default="/tmp/vio_homing_stand_result.json"/>
-
   <node pkg="vio_homing" type="wifi_link_monitor.py" name="stand_link_monitor" output="screen">
     <param name="bind_address" value="127.0.0.1"/>
     <param name="port" value="$(arg heartbeat_port)"/>
@@ -20,8 +19,7 @@
     <param name="odom_topic" value="/vio/odom_frd"/>
     <param name="wait_link_seconds" value="60.0"/>
   </node>
-  <node if="$(arg run_simulator)" pkg="vio_homing" type="homing_stand_sim.py"
-        name="homing_stand_sim" output="screen" required="true">
+  <node if="$(arg run_simulator)" pkg="vio_homing" type="homing_stand_sim.py" name="homing_stand_sim" output="screen" required="true">
     <param name="heartbeat_port" value="$(arg heartbeat_port)"/>
     <param name="result_file" value="$(arg result_file)"/>
   </node>

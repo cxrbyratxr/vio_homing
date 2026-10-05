@@ -4,6 +4,7 @@ from vio_homing.homing_logic import HomingLogic
 
 
 class HomingLogicTest(unittest.TestCase):
+
     def armed(self):
         h = HomingLogic()
         h.set_link('LINK_OK', 100.0)
@@ -13,8 +14,11 @@ class HomingLogicTest(unittest.TestCase):
 
     def returning(self):
         h = self.armed()
-        self.assertTrue(h.start_return([(2, 0, 0), (1, 0, 0), (0, 0, 0)],
-                                       (0, 0, 0), 'local_frd'))
+        self.assertTrue(
+            h.start_return(
+                [(2, 0, 0), (1, 0, 0), (0, 0, 0)], (0, 0, 0), 'local_frd'
+            )
+        )
         return h
 
     def waiting(self):
@@ -77,11 +81,11 @@ class HomingLogicTest(unittest.TestCase):
         self.assertEqual(h.state, 'RETURN')
 
     def test_stale_wrong_frame_and_nonfinite_odometry(self):
-        for point, frame, stamp in [((2, 0, 0), 'local_frd', 100),
-                                     ((2, 0, 0), 'map', 104),
-                                     ((float('nan'), 0, 0), 'local_frd', 104),
-                                     ((2, 0, 0), 'local_frd', 0),
-                                     ((2, 0, 0), 'local_frd', 105)]:
+        for point, frame, stamp in [
+            ((2, 0, 0), 'local_frd', 100), ((2, 0, 0), 'map', 104),
+            ((float('nan'), 0, 0), 'local_frd', 104),
+            ((2, 0, 0), 'local_frd', 0), ((2, 0, 0), 'local_frd', 105)
+        ]:
             h = self.returning()
             h.set_odom(point, frame, stamp, 104)
             h.step(104)
@@ -106,10 +110,12 @@ class HomingLogicTest(unittest.TestCase):
 
     def test_invalid_paths_and_immutable_snapshot(self):
         h = self.armed()
-        for path, endpoint, frame in [([], (0, 0, 0), 'local_frd'),
-                                      ([(1, 0, 0)], (0, 0, 0), 'local_frd'),
-                                      ([(0, 0, 0)], (0, 0, 0), ''),
-                                      ([(float('inf'), 0, 0)], (0, 0, 0), 'local_frd')]:
+        for path, endpoint, frame in [
+            ([], (0, 0, 0), 'local_frd'),
+            ([(1, 0, 0)], (0, 0, 0), 'local_frd'),
+            ([(0, 0, 0)], (0, 0, 0), ''),
+            ([(float('inf'), 0, 0)], (0, 0, 0), 'local_frd')
+        ]:
             self.assertFalse(h.start_return(path, endpoint, frame))
         path = [[0, 0, 0]]
         self.assertTrue(h.start_return(path, (0, 0, 0), 'local_frd'))
@@ -117,8 +123,12 @@ class HomingLogicTest(unittest.TestCase):
         self.assertEqual(h.goal(), (0, 0, 0))
 
     def test_wait_configuration_cannot_be_shortened(self):
-        for kwargs in [dict(wait_link_seconds=59), dict(arrival_radius=0),
-                       dict(odom_timeout=0), dict(wait_link_seconds=float('nan'))]:
+        for kwargs in [
+            dict(wait_link_seconds=59),
+            dict(arrival_radius=0),
+            dict(odom_timeout=0),
+            dict(wait_link_seconds=float('nan'))
+        ]:
             self.assertRaises(ValueError, HomingLogic, **kwargs)
 
 

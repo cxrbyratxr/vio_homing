@@ -12,22 +12,44 @@ from std_msgs.msg import Bool, String
 
 
 class Interfaces(unittest.TestCase):
+
     def setUp(self):
         self.state = None
         self.active = None
         self.goal_x = None
-        self.link = rospy.Publisher('/vio_homing/link_state', String, queue_size=10)
-        self.path = rospy.Publisher('/vio_homing/return_path', Path, queue_size=10, latch=True)
-        self.ready = rospy.Publisher('/vio_homing/return_ready', Bool, queue_size=10, latch=True)
-        self.endpoint = rospy.Publisher('/vio_homing/last_good_link_pose', PoseStamped, queue_size=10, latch=True)
+        self.link = rospy.Publisher(
+            '/vio_homing/link_state', String, queue_size=10
+        )
+        self.path = rospy.Publisher(
+            '/vio_homing/return_path', Path, queue_size=10, latch=True
+        )
+        self.ready = rospy.Publisher(
+            '/vio_homing/return_ready', Bool, queue_size=10, latch=True
+        )
+        self.endpoint = rospy.Publisher(
+            '/vio_homing/last_good_link_pose',
+            PoseStamped,
+            queue_size=10,
+            latch=True
+        )
         self.odom = rospy.Publisher('/vio/odom_frd', Odometry, queue_size=10)
         self.subs = [
-            rospy.Subscriber('/vio_homing/homing_state', String, self.on_state),
-            rospy.Subscriber('/vio_homing/return_active', Bool, self.on_active),
-            rospy.Subscriber('/vio_homing/return_goal', PoseStamped, self.on_goal)]
-        self.wait(lambda: self.link.get_num_connections() and self.path.get_num_connections()
-                  and self.ready.get_num_connections() and self.endpoint.get_num_connections()
-                  and self.odom.get_num_connections() and self.state is not None, 10)
+            rospy.Subscriber(
+                '/vio_homing/homing_state', String, self.on_state
+            ),
+            rospy.Subscriber(
+                '/vio_homing/return_active', Bool, self.on_active
+            ),
+            rospy.Subscriber(
+                '/vio_homing/return_goal', PoseStamped, self.on_goal
+            )
+        ]
+        self.wait(
+            lambda: self.link.get_num_connections() and self.path.
+            get_num_connections() and self.ready.get_num_connections() and self
+            .endpoint.get_num_connections() and self.odom.get_num_connections(
+            ) and self.state is not None, 10
+        )
 
     def on_state(self, msg):
         self.state = msg.data
@@ -84,7 +106,9 @@ class Interfaces(unittest.TestCase):
         self.assert_stays('NORMAL')  # No healthy link has been observed yet.
 
         # Cross-topic order: recorder output can arrive before loss callback.
-        for order in ('path_before_loss', 'ready_before_path', 'path_before_ready'):
+        for order in (
+            'path_before_loss', 'ready_before_path', 'path_before_ready'
+        ):
             self.reset()
             route = self.route()
             self.endpoint.publish(route.poses[-1])
@@ -107,9 +131,11 @@ class Interfaces(unittest.TestCase):
                     self.ready.publish(Bool(data=True))
             self.wait(lambda: self.state == 'RETURN' and self.goal_x == 2.0)
             # Old timestamps, mismatched frames and NaN cannot advance points.
-            for x, frame, stamp in [(2, 'local_frd', rospy.Time.now() - rospy.Duration(3)),
-                                     (2, 'map', rospy.Time.now()),
-                                     (float('nan'), 'local_frd', rospy.Time.now())]:
+            for x, frame, stamp in [
+                (2, 'local_frd', rospy.Time.now() - rospy.Duration(3)),
+                (2, 'map', rospy.Time.now()),
+                (float('nan'), 'local_frd', rospy.Time.now())
+            ]:
                 self.send_odom(x, frame, stamp)
                 self.assert_stays('RETURN')
                 self.assertEqual(self.goal_x, 2.0)
@@ -119,7 +145,9 @@ class Interfaces(unittest.TestCase):
 
         # A latched old route and ready=true cannot start a new episode.
         self.reset()
-        self.path.publish(self.route(stamp=rospy.Time.now() - rospy.Duration(5)))
+        self.path.publish(
+            self.route(stamp=rospy.Time.now() - rospy.Duration(5))
+        )
         self.ready.publish(Bool(data=True))
         self.link.publish(String(data='LINK_LOST'))
         self.wait(lambda: self.state == 'LINK_LOST')

@@ -11,8 +11,12 @@ import sys
 import time
 
 rows = subprocess.check_output(['ps', '-eo', 'pid,args']).decode().splitlines()
-pids = [int(row.split(None, 1)[0]) for row in rows
-        if re.search(r' python /home/jetson/catkin_ws/src/vio_homing/scripts/mavlink_imu_bridge.py ', row)]
+pids = [
+    int(row.split(None, 1)[0]) for row in rows if re.search(
+        r' python /home/jetson/catkin_ws/src/vio_homing/scripts/'
+        r'mavlink_imu_bridge.py ', row
+    )
+]
 if len(pids) != 1:
     sys.exit('Expected one running companion UART bridge; found %r' % pids)
 process = None
@@ -23,11 +27,17 @@ env.pop('ROS_IP', None)
 env.pop('ROS_HOSTNAME', None)
 try:
     os.kill(pids[0], signal.SIGSTOP)
-    process = subprocess.Popen(['roslaunch', '-p', '11331', 'vio_homing',
-                                'px4_homing_bench.launch', 'serial_port:=/dev/ttyTHS1'],
-                               env=env, stdout=log, stderr=subprocess.STDOUT,
-                               preexec_fn=os.setsid)
-    deadline = time.time()+420
+    process = subprocess.Popen(
+        [
+            'roslaunch', '-p', '11331', 'vio_homing',
+            'px4_homing_bench.launch', 'serial_port:=/dev/ttyTHS1'
+        ],
+        env=env,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        preexec_fn=os.setsid
+    )
+    deadline = time.time() + 420
     while process.poll() is None and time.time() < deadline:
         time.sleep(0.5)
     if process.poll() is None:
@@ -37,9 +47,11 @@ try:
         raise RuntimeError('No result from this bench run')
     result = json.load(open(result_path))
     if not result.get('passed'):
-        raise RuntimeError('Bench failed: '+str(result.get('error')))
-    print('PASS: hardware bench; WAIT_LINK %.3f s, LAND %s' %
-          (result['wait_link_seconds'], result['land_ack']))
+        raise RuntimeError('Bench failed: ' + str(result.get('error')))
+    print(
+        'PASS: hardware bench; WAIT_LINK %.3f s, LAND %s' %
+        (result['wait_link_seconds'], result['land_ack'])
+    )
 finally:
     if process is not None and process.poll() is None:
         os.killpg(process.pid, signal.SIGINT)

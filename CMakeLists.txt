@@ -46,8 +46,10 @@ install(DIRECTORY launch/
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  catkin_install_python(PROGRAMS test/homing_interfaces.py
-    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  catkin_install_python(
+    PROGRAMS test/homing_interfaces.py
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
   catkin_add_nosetests(test/test_homing_logic.py)
   catkin_add_nosetests(test/test_homing_transport.py)
   add_rostest(test/homing_stand.test)

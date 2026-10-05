@@ -16,16 +16,22 @@ def valid_point(point):
 
 
 def distance(a, b):
-    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+    return math.sqrt(sum((x - y)**2 for x, y in zip(a, b)))
 
 
 class HomingLogic(object):
-    def __init__(self, arrival_radius=0.4, wait_link_seconds=60.0,
-                 odom_timeout=1.0):
+
+    def __init__(
+        self, arrival_radius=0.4, wait_link_seconds=60.0, odom_timeout=1.0
+    ):
         values = (arrival_radius, wait_link_seconds, odom_timeout)
-        if (not all(finite(v) for v in values) or arrival_radius <= 0 or
-                odom_timeout <= 0 or wait_link_seconds < 60.0):
-            raise ValueError('radius/timeout must be positive; wait must be >= 60 s')
+        if (
+            not all(finite(v) for v in values) or arrival_radius <= 0
+            or odom_timeout <= 0 or wait_link_seconds < 60.0
+        ):
+            raise ValueError(
+                'radius/timeout must be positive; wait must be >= 60 s'
+            )
         self.arrival_radius = arrival_radius
         self.wait_link_seconds = wait_link_seconds
         self.odom_timeout = odom_timeout
@@ -57,8 +63,10 @@ class HomingLogic(object):
             self.last_good = None
             self.index = 0
             self.wait_started = None
-        elif (state == 'LINK_LOST' and self.seen_link_ok and
-              self.state == 'NORMAL'):
+        elif (
+            state == 'LINK_LOST' and self.seen_link_ok
+            and self.state == 'NORMAL'
+        ):
             self.state = 'LINK_LOST'
 
     def start_return(self, path, last_good, frame):
@@ -78,7 +86,8 @@ class HomingLogic(object):
 
     def set_odom(self, point, frame, stamp, received):
         if not valid_point(point) or not finite(stamp) or stamp <= 0:
-            # Invalid input also invalidates any previous apparently fresh pose.
+            # Invalid input also invalidates any previous apparently fresh
+            # pose.
             self.odom_received = None
             return
         self.odom = tuple(point)
@@ -89,8 +98,10 @@ class HomingLogic(object):
     def odom_fresh(self, now):
         if self.odom_received is None or self.odom_frame != self.frame:
             return False
-        return (0 <= now - self.odom_received <= self.odom_timeout and
-                0 <= now - self.odom_stamp <= self.odom_timeout)
+        return (
+            0 <= now - self.odom_received <= self.odom_timeout
+            and 0 <= now - self.odom_stamp <= self.odom_timeout
+        )
 
     def step(self, now):
         if self.last_tick is not None and now < self.last_tick:
@@ -99,17 +110,24 @@ class HomingLogic(object):
                 self.wait_started = None
         self.last_tick = now
         if self.state == 'RETURN' and self.odom_fresh(now):
-            if distance(self.odom, self.path[self.index]) <= self.arrival_radius:
+            if distance(
+                self.odom, self.path[self.index]
+            ) <= self.arrival_radius:
                 if self.index + 1 < len(self.path):
-                    # Advance one point per publication, preserving route order.
+                    # Advance one point per publication, preserving route
+                    # order.
                     self.index += 1
-                elif distance(self.odom, self.last_good) <= self.arrival_radius:
+                elif distance(
+                    self.odom, self.last_good
+                ) <= self.arrival_radius:
                     self.state = 'WAIT_LINK'
                     self.wait_started = now
         elif self.state == 'WAIT_LINK':
             # Count only continuous time with a fresh pose at the endpoint.
-            if (not self.odom_fresh(now) or
-                    distance(self.odom, self.last_good) > self.arrival_radius):
+            if (
+                not self.odom_fresh(now)
+                or distance(self.odom, self.last_good) > self.arrival_radius
+            ):
                 self.wait_started = None
             elif self.wait_started is None:
                 self.wait_started = now

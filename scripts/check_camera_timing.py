@@ -20,7 +20,7 @@ def callback(msg):
 def analyze():
     dt = [b - a for a, b in zip(timestamps, timestamps[1:])]
     mean = sum(dt) / len(dt)
-    std = math.sqrt(sum((x - mean) ** 2 for x in dt) / len(dt))
+    std = math.sqrt(sum((x - mean)**2 for x in dt) / len(dt))
     gaps = sum(1 for x in dt if x > 1.5 * mean)  # пропущенный кадр
     backwards = sum(1 for x in dt if x <= 0)
 

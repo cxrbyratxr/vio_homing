@@ -772,3 +772,10 @@ PX4 vehicle_visual_odometry
 GitHub main4c645ce (MrKan: USB camera node, camera timing, TASK.md и PEP formatting) объединён с проверенным Jetson767f111 в отдельной ветке integrate/jetson-github. Merge commit9c5e2ef содержит обе истории. Конфликты bridge/launch/CMake разрешены; семантика существующих узлов не изменилась, что подтверждено AST. Camera и cv_bridge добавлены, enable_camera=false до физического подключения. Все исходные файлы и незакоммиченные правки сохранены в отдельной папке jetson/backup и stash.
 
 Повторная сборка и24 catkin tests прошли; повторный аппаратный bench PASS: WAIT_LINK 60.145384s до ACK LAND MAV_RESULT_ACCEPTED; IMU99.99Hz / ODOMETRY30.00Hz. Все cancellation/freshness/restart/disconnect проверки прошли. Логи verification/github_merge/. ARM и изменения параметров PX4 не выполнялись, камера отсутствует, Wi-Fi не используется. Push не выполнялся. Подробности MERGE_REPORT.md.
+
+
+## Единый стиль и ограниченные оптимизации
+
+Все19 Python-файлов оформлены по PEP8 (79 символов,4 пробела) с помощью YAPF; добавлены setup.cfg, .editorconfig и requirements-format.txt. Launch/XML оформлены единообразно. Форматирование сохраняет структуру кода.
+
+Оптимизации: предварительный cos/sin для фиксированного FRD→NED преобразования, один список вместо двух при reverse return_path, JSON tx_event создаётся только при наличии подписчиков. ROS/MAVLink интерфейсы, оси, таймауты и LAND gates сохраняются. Подробности DEVELOPMENT.md. По просьбе владельца функциональные/ROS/PX4 tests не запускались; требуется только пересборка на Jetson.
