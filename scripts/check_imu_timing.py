@@ -5,7 +5,6 @@ import rospy
 import math
 from sensor_msgs.msg import Imu
 
-
 timestamps = []
 COUNT = 1000
 
@@ -25,25 +24,12 @@ def analyze():
         dt.append(timestamps[i] - timestamps[i - 1])
 
     mean = sum(dt) / len(dt)
-
-    variance = sum(
-        (x - mean) ** 2 for x in dt
-    ) / len(dt)
-
+    variance = sum((x - mean) ** 2 for x in dt) / len(dt)
     std = math.sqrt(variance)
-
     minimum = min(dt)
     maximum = max(dt)
-
-    large_gaps = [
-        x for x in dt
-        if x > 0.015
-    ]
-
-    backwards = [
-        x for x in dt
-        if x <= 0
-    ]
+    large_gaps = [x for x in dt if x > 0.015]
+    backwards = [x for x in dt if x <= 0]
 
     print("")
     print("=== IMU TIMING ===")
@@ -59,13 +45,7 @@ def analyze():
 
 def main():
     rospy.init_node("check_imu_timing")
-
-    rospy.Subscriber(
-        "/pixhawk/imu",
-        Imu,
-        callback,
-        queue_size=200
-    )
+    rospy.Subscriber("/pixhawk/imu", Imu, callback, queue_size=200)
 
     print("Collecting %d IMU messages..." % COUNT)
 
