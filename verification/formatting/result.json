@@ -1,0 +1,14 @@
+{
+  "source_commit": "c3ff082fff43ab72eee578af986489a735dbe25b",
+  "build_command": "catkin_make -j2",
+  "build_exit_code": 0,
+  "python_runtime": "2.7",
+  "functional_tests_run": false,
+  "px4_bench_run": false,
+  "style": "PEP 8, YAPF, 79 columns",
+  "optimizations": [
+    "cache fixed FRD/NED trigonometry",
+    "reverse one route slice in place",
+    "skip unsubscribed transient JSON events"
+  ]
+}

@@ -779,3 +779,5 @@ GitHub main4c645ce (MrKan: USB camera node, camera timing, TASK.md и PEP format
 Все19 Python-файлов оформлены по PEP8 (79 символов,4 пробела) с помощью YAPF; добавлены setup.cfg, .editorconfig и requirements-format.txt. Launch/XML оформлены единообразно. Форматирование сохраняет структуру кода.
 
 Оптимизации: предварительный cos/sin для фиксированного FRD→NED преобразования, один список вместо двух при reverse return_path, JSON tx_event создаётся только при наличии подписчиков. ROS/MAVLink интерфейсы, оси, таймауты и LAND gates сохраняются. Подробности DEVELOPMENT.md. По просьбе владельца функциональные/ROS/PX4 tests не запускались; требуется только пересборка на Jetson.
+
+Пересборка на Jetson выполнена:catkin_make -j2, exit0. Лог и отчёт:verification/formatting/. Функциональные/ROS/PX4 тесты в этом этапе не запускались.
