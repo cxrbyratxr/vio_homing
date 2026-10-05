@@ -36,3 +36,18 @@
 - mavlink_imu_bridge.py.bak сохранён в исходном архиве и stash; восстановлен как untracked backup, в merge commit не входит.
 
 Проверенные PX4 логи предыдущего этапа сохранены в verification/px4_bench/. Камера и Wi-Fi не участвуют в synthetic bench, физического движения нет. Параметры PX4 и ARM checks не изменяются. Push в GitHub не выполняется в рамках этого объединения.
+
+
+## Проверка объединённой версии на Jetson
+
+- catkin_make -j2: успешно; Python2.7 imports cv2, yaml, cv_bridge: успешно (OpenCV4.1.1).
+- companion.launch: четыре узла при штатном запуске; camera появляется только при enable_camera:=true. Это проверка разбора launch, физической камеры на стенде нет.
+- catkin: 24 tests, 0 errors, 0 failures, 0 skipped.
+- Полный реальный PX4 bench повторён на merge commit 9c5e2ef54b963152ba20c87bab9f38c0bea66991: PASS.
+- WAIT_LINK до ACK LAND: 60.145384 s; один LAND, ACK MAV_RESULT_ACCEPTED.
+- IMU 99.99 Hz, ODOMETRY 30.00 Hz; численные return targets проверены в PX4 trajectory_setpoint.
+- Отмена RETURN/WAIT_LINK, наблюдение61s после отмены, stale/missing odometry, пустой маршрут, отключение UART/reconnect, повторный LAND и перезапуск менеджера: PASS.
+- ARM не выполнялся, параметры PX4 не менялись, исходный режим/bridge восстановлены.
+- Логи: verification/github_merge/; предыдущие стендовые доказательства сохранены отдельно в verification/px4_bench/.
+
+Камера пока не проверена физически; новый camera-код коллеги успешно объединён, собирается и импортируется, но оставлен выключенным. Wi-Fi не используется; движение по-прежнему синтетическое.

@@ -765,3 +765,10 @@ PX4 vehicle_visual_odometry
 - Catkin: **24 tests, 0 errors, 0 failures, 0 skipped**; включая20 чистых тестов Python2.7 и ROS-интерфейсы/сценарий.
 
 На стенде Jetson Nano + Pixhawk 6C Mini подтверждён программный тракт от детекции потери связи и формирования обратной траектории до передачи команд возврата и LAND в PX4. Реальное выполнение команд БВС будет проверяться после сборки аппарата.
+
+
+## Объединение с GitHub / изменения коллеги
+
+GitHub main4c645ce (MrKan: USB camera node, camera timing, TASK.md и PEP formatting) объединён с проверенным Jetson767f111 в отдельной ветке integrate/jetson-github. Merge commit9c5e2ef содержит обе истории. Конфликты bridge/launch/CMake разрешены; семантика существующих узлов не изменилась, что подтверждено AST. Camera и cv_bridge добавлены, enable_camera=false до физического подключения. Все исходные файлы и незакоммиченные правки сохранены в отдельной папке jetson/backup и stash.
+
+Повторная сборка и24 catkin tests прошли; повторный аппаратный bench PASS: WAIT_LINK 60.145384s до ACK LAND MAV_RESULT_ACCEPTED; IMU99.99Hz / ODOMETRY30.00Hz. Все cancellation/freshness/restart/disconnect проверки прошли. Логи verification/github_merge/. ARM и изменения параметров PX4 не выполнялись, камера отсутствует, Wi-Fi не используется. Push не выполнялся. Подробности MERGE_REPORT.md.
