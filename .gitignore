@@ -1,2 +1,6 @@
 __pycache__/
 *.py[cod]
+
+# Local Finder metadata and obsolete editor backups
+.DS_Store
+*.bak
