@@ -9,6 +9,7 @@ import rospy
 import yaml
 from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo, Image
+from vio_homing.camera_calibration import validate_calibration
 
 
 class UsbCameraNode(object):
@@ -55,25 +56,18 @@ class UsbCameraNode(object):
                 calib = yaml.safe_load(f)
         except Exception as e:
             rospy.logerr("Failed to read %s: %s", path, e)
-            return None
+            raise ValueError("Cannot load camera calibration: %s" % path)
 
+        values = validate_calibration(calib, self.width, self.height)
         info = CameraInfo()
-        info.width = int(calib["image_width"])
-        info.height = int(calib["image_height"])
-        info.distortion_model = calib.get("distortion_model", "plumb_bob")
-        info.K = calib["camera_matrix"]["data"]
-        info.D = calib["distortion_coefficients"]["data"]
-        info.R = calib["rectification_matrix"]["data"]
-        info.P = calib["projection_matrix"]["data"]
+        info.width = self.width
+        info.height = self.height
+        info.distortion_model = calib["distortion_model"]
+        info.K = values["camera_matrix"]
+        info.D = values["distortion_coefficients"]
+        info.R = values["rectification_matrix"]
+        info.P = values["projection_matrix"]
 
-        if (info.width, info.height) != (self.width, self.height):
-            rospy.logwarn(
-                "Calibration size %dx%d != capture size %dx%d",
-                info.width,
-                info.height,
-                self.width,
-                self.height,
-            )
         rospy.loginfo("Loaded calibration %s", path)
         return info
 
@@ -113,6 +107,12 @@ class UsbCameraNode(object):
         self.cap = None
 
     def publish(self, frame, stamp):
+        height, width = frame.shape[:2]
+        if self.camera_info is not None and (width, height) != (
+                self.camera_info.width, self.camera_info.height):
+            rospy.logerr_throttle(
+                5.0, "Actual image size differs from calibration; dropping")
+            return
         if self.grayscale and frame.ndim == 3:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 

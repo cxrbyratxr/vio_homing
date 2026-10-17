@@ -50,7 +50,7 @@
   <!-- ============================== -->
   <!-- USB camera (downward)         -->
   <!-- ============================== -->
-  <!-- Current bench has no camera; explicitly enable after connecting it. -->
+  <!-- Enable after confirming the connected USB camera and capture mode. -->
   <arg name="enable_camera" default="false"/>
   <arg name="camera_device" default="/dev/video0"/>
   <arg name="camera_width" default="640"/>
@@ -65,7 +65,7 @@
     <param name="fps" value="$(arg camera_fps)"/>
     <param name="fourcc" value="$(arg camera_fourcc)"/>
     <param name="grayscale" value="true"/>
-    <param name="frame_id" value="camera_link"/>
+    <param name="frame_id" value="camera_optical_frame"/>
     <param name="image_topic" value="/camera/image_raw"/>
     <param name="camera_info_topic" value="/camera/camera_info"/>
     <param name="camera_info_file" value="$(arg camera_info_file)"/>

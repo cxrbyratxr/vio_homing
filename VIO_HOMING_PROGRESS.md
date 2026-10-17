@@ -781,3 +781,12 @@ GitHub main4c645ce (MrKan: USB camera node, camera timing, TASK.md и PEP format
 Оптимизации: предварительный cos/sin для фиксированного FRD→NED преобразования, один список вместо двух при reverse return_path, JSON tx_event создаётся только при наличии подписчиков. ROS/MAVLink интерфейсы, оси, таймауты и LAND gates сохраняются. Подробности DEVELOPMENT.md. По просьбе владельца функциональные/ROS/PX4 tests не запускались; требуется только пересборка на Jetson.
 
 Пересборка на Jetson выполнена:catkin_make -j2, exit0. Лог и отчёт:verification/formatting/. Функциональные/ROS/PX4 тесты в этом этапе не запускались.
+
+## 2026-10-17 — локальная подготовка USBGS1200P01
+
+- Добавлены отдельные camera.launch и record_camera_imu.launch без запуска UART.
+- YAML intrinsics проверяется по размерам, структуре, модели, конечности коэффициентов и focal lengths. При ошибке явно указанного файла запуск останавливается. При фактическом несовпадении размера кадры не публикуются.
+- Camera image frame уточнён как camera_optical_frame; extrinsics к IMU не заданы.
+- Добавлены регрессионные тесты калибровки и CAMERA_BRINGUP.md с процедурами шахматной доски, AprilGrid/Kalibr и ограничениями подключения VINS.
+- Локально Python 3: 24 unit tests PASS (20 существующих, 4 новых). XML launch/package разбирается. Это не catkin/ROS/Python 2.7 или аппаратный тест.
+- На Jetson ничего не перенесено и не перезапущено; калибровочных измерений ещё нет.

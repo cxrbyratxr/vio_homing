@@ -1,0 +1,6 @@
+<launch>
+  <!-- Requires existing camera and IMU publishers; no hardware control. -->
+  <arg name="output_prefix"/>
+  <node pkg="rosbag" type="record" name="record_camera_imu" output="screen"
+        args="--lz4 --split --size=1024 -o $(arg output_prefix) /camera/image_raw /camera/camera_info /pixhawk/imu /vio_homing/link_state /diagnostics /rosout"/>
+</launch>
