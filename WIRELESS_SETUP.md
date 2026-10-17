@@ -1,5 +1,13 @@
 # Wi-Fi camera + QGC, 2026-10-17
 
+## Normal operation after service installation
+
+Use `sudo systemctl start vio-wireless.service`, inspect with
+`systemctl status vio-wireless.service --no-pager -l` and
+`journalctl -u vio-wireless.service -n 50 --no-pager`.
+Do not launch another ROS stack/camera/video while the service is running.
+Service details and recovery: [systemd/README.md](systemd/README.md).
+
 ## Current measured bench
 
 Jetson AP VIO-HOMING:192.168.50.1; Mac Wi-Fi:192.168.50.24.
@@ -9,7 +17,9 @@ TELEM2:PX4 /dev/ttyS3 ↔ Jetson /dev/ttyTHS1,460800 baud.
 PX4 parameters already set by owner:SER_TEL2_BAUD=460800,MAV_1_RATE=30000.
 HIGHRES_IMU200 requested:1000 timestamp samples mean196.17Hz,max9.919ms,
 no backward stamps/no gaps>15ms. Earlier test under Kalibr build load had reconnects.
-Full wireless camera+video+QGC+IMU200 acceptance must still be repeated.
+Owner confirmed the deployed wireless camera/QGC stack works and then reported
+successful service setup and continued operation. Cold boot and extended combined
+load/disconnect acceptance are still pending. See PROJECT_STATUS.md.
 
 ## Update without internet
 
@@ -19,7 +29,7 @@ It only fast-forwards, never overwrites divergent commits. Saved stashes are not
 reapplied automatically: Jetson's manual camera/launch edits are superseded by
 these integrated changes; unrelated edits must be reviewed from stash/backup.
 No changes to ~/.bashrc, networking profiles, AP password or PX4 parameters.
-The old service remains stopped until separately configured for this launch.
+After service setup, vio-homing.service is disabled; vio-wireless.service owns the stack.
 Kalibr workspace, bags and measured aprilgrid.yaml are outside the repo and unchanged.
 
 ## Jetson prerequisites
@@ -34,12 +44,13 @@ Don't reinstall ROS/JetPack/OpenCV. If apt proposes removals, inspect before acc
 AP must already be active with antennas connected. Script fails if its IP is absent.
 Mac must have the configured address; DHCP may change it on reconnect.
 
-## One launch terminal
+## Manual launch (only when vio-wireless.service is stopped)
 
 Stop any bag recording cleanly with Ctrl-C. Stop old manual companion, camera and
 web_video_server with Ctrl-C, and stop the old service:
 
 ```bash
+sudo systemctl stop vio-wireless.service
 sudo systemctl stop vio-homing.service
 ```
 
@@ -114,7 +125,7 @@ No ARM/Takeoff/flight test is part of wireless preview acceptance.
 
 ## Service and SSH lifetime
 
-This version is a foreground trial. Keep launch SSH terminal open:closing it or
+The manual command is a foreground trial; the installed vio-wireless.service is SSH-independent. Keep launch SSH terminal open:closing it or
 losing Wi-Fi may terminate the stack. For a controlled disconnect test use a
 local Jetson session or an installed terminal multiplexer; do not rely on a
 Wi-Fi SSH shell for autonomous survival. Do not enable old service blindly:
@@ -128,4 +139,4 @@ After restarting capture, read `v4l2-ctl -d /dev/video0 --get-ctrl=focus_auto,fo
 
 See [systemd instructions](systemd/README.md). Dedicated vio-wireless.service
 is now prepared; older foreground-lifetime limitations apply to manual launch.
-Installation and boot verification remain to be done on Jetson.
+Owner reports successful installation/operation on Jetson. Cold boot verification remains pending.

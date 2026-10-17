@@ -1,5 +1,9 @@
 # Wireless service (Jetson only)
 
+Status 2026-10-17: owner reports successful setup and continued operation.
+Cold boot verification has not yet been reported. Installation steps below
+are for initial install/reinstall; normal operation uses the existing service.
+
 Requires already deployed wireless.launch/run_wireless.sh (390e31d or newer),
 web_video_server, existing AP with antennas, PX4 TELEM2=460800/MAV_1_RATE=30000.
 Fixed current Mac IP192.168.50.24; update unit if DHCP changes. No automatic IP
