@@ -40,6 +40,10 @@ catkin_install_python(
     ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+install(PROGRAMS scripts/run_wireless.sh
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )

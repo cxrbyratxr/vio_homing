@@ -807,3 +807,15 @@ BUFFERSIZE=1:120 кадров,15.22Hz,grab63.72ms,retrieve1.99ms.
 Удалена принудительная настройка одного буфера в usb_camera_node.py.
 Частота полного ROS узла после исправления ещё требует проверки на Jetson.
 Это измерение частоты, не калибровка timestamps/экспозиции или latency.
+
+## 2026-10-17 — integrated wireless trial launch
+
+wireless.launch + run_wireless.sh combine AP ROS addressing, QGC fixed-peer relay,
+color YUYV640x480@30 preview and single UART460800. Request HIGHRES_IMU200 on
+each connection with COMMAND_LONG/SET_MESSAGE_INTERVAL; log ACK and validate
+UART headroom. Existing launch defaults remain compatible. Commands for homing
+remain disabled. Stop old service/processes before update/start.
+29 existing local Python3 tests PASS; XML wiring and source syntax checked.
+New combined runtime/ROS Python2 integration still requires Jetson test.
+Measured owner results for camera30Hz and IMU196.17Hz are historical component
+checks, not proof of the new launch. See WIRELESS_SETUP.md.

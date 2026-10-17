@@ -6,6 +6,7 @@ import os
 os.environ["MAVLINK20"] = "1"
 
 import time
+import math
 import threading
 from collections import deque
 
@@ -23,6 +24,12 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
     def __init__(self):
         self.port = rospy.get_param("~serial_port", "/dev/ttyTHS1")
         self.baud = int(rospy.get_param("~baudrate", 115200))
+        self.imu_rate_hz = float(rospy.get_param("~imu_rate_hz", 0))
+        if (math.isnan(self.imu_rate_hz) or math.isinf(self.imu_rate_hz)
+                or self.imu_rate_hz < 0 or self.imu_rate_hz > 200):
+            raise ValueError("imu_rate_hz must be 0 (unchanged) or <=200")
+        if self.imu_rate_hz > 0 and self.imu_rate_hz * 75 > self.baud / 10.0 * 0.7:
+            raise ValueError("IMU rate leaves insufficient UART headroom")
         self.imu_topic = rospy.get_param("~imu_topic", "/pixhawk/imu")
         self.imu_frame_id = rospy.get_param("~imu_frame_id", "imu_link")
         self.odom_topic = rospy.get_param("~odom_topic", "/vio/odom_frd")
@@ -124,6 +131,16 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
 
         self.master.target_component = heartbeat.get_srcComponent()
         self.heartbeat_received(heartbeat)
+
+        if self.imu_rate_hz > 0:
+            with self.tx_lock:
+                self.master.mav.command_long_send(
+                    self.master.target_system, self.master.target_component,
+                    mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                    mavutil.mavlink.MAVLINK_MSG_ID_HIGHRES_IMU,
+                    int(round(1000000.0 / self.imu_rate_hz)), 0, 0, 0, 0, 0)
+            rospy.loginfo("Requested HIGHRES_IMU %.1f Hz; verify actual rate",
+                          self.imu_rate_hz)
 
         rospy.loginfo(
             "PX4 connected: system=%d component=%d",
@@ -414,6 +431,9 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
 
             elif msg_type == 'COMMAND_ACK' and msg.get_srcSystem(
             ) == self.master.target_system:
+                if msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL:
+                    rospy.loginfo("SET_MESSAGE_INTERVAL ACK result=%d",
+                                  msg.result)
                 self.command_ack_received(msg)
 
             elif msg_type == 'SERIAL_CONTROL' and self.bench_enabled:

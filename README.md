@@ -69,3 +69,9 @@ Runner временно приостанавливает штатный bridge �
 ## QGC по Wi-Fi AP (локальная подготовка)
 
 [Канал QGC ↔ Jetson ↔ PX4 и heartbeat](QGC_WIFI.md). Опциональный relay реализован локально; проверка на Jetson/QGC/PX4 ещё предстоит. Полётный homing пока не реализован: текущий adapter рассчитан на disarmed bench.
+
+## Единый запуск камеры и QGC через AP
+
+[Инструкция и ограничения](WIRELESS_SETUP.md): `scripts/run_wireless.sh`.
+Wi-Fi ROS IP, цветная камера640x480@30, видео8080, QGC relay и UART460800;
+запрос IMU200 при подключении. Проверка объединённой версии на Jetson предстоит.
