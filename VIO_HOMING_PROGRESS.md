@@ -819,3 +819,12 @@ remain disabled. Stop old service/processes before update/start.
 New combined runtime/ROS Python2 integration still requires Jetson test.
 Measured owner results for camera30Hz and IMU196.17Hz are historical component
 checks, not proof of the new launch. See WIRELESS_SETUP.md.
+
+## 2026-10-17 — systemd wireless autostart preparation
+
+Added vio-wireless.service + installer:separate service, old service preserved
+and disabled on installation, group-wide shutdown, restart on missing AP/failure,
+fixed current AP/Mac IP, independent of SSH. Installer rejects live ROS processes
+and saves previous unit/state. AP autoconnect is an explicit operator step.
+Local bash syntax/unit structural checks passed; actual systemd/boot behavior
+must be verified on Jetson. No claims of flight readiness. See systemd/README.md.

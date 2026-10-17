@@ -1,0 +1,26 @@
+[Unit]
+Description=VIO Homing wireless camera and QGC stack
+Wants=network-online.target
+After=network-online.target NetworkManager.service
+Conflicts=vio-homing.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=jetson
+Group=jetson
+SupplementaryGroups=dialout video
+WorkingDirectory=/home/jetson/catkin_ws/src/vio_homing
+Environment=HOME=/home/jetson
+Environment=VIO_CATKIN_WS=/home/jetson/catkin_ws
+Environment=VIO_JETSON_IP=192.168.50.1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash /home/jetson/catkin_ws/src/vio_homing/scripts/run_wireless.sh qgc_peer_ip:=192.168.50.24
+Restart=always
+RestartSec=10
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

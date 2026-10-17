@@ -123,3 +123,9 @@ Current homing transport is DISARMED bench only and remains disabled by default.
 Closing QGC tests GCS heartbeat independently of SSH and video.
 
 After restarting capture, read `v4l2-ctl -d /dev/video0 --get-ctrl=focus_auto,focus_absolute,exposure_auto,exposure_absolute`. Focus was fixed by owner, but persistence across camera open/replug is not assumed. Do not set an unmeasured focus position from old logs.
+
+## Optional SSH-independent autostart
+
+See [systemd instructions](systemd/README.md). Dedicated vio-wireless.service
+is now prepared; older foreground-lifetime limitations apply to manual launch.
+Installation and boot verification remain to be done on Jetson.
