@@ -798,3 +798,12 @@ GitHub main4c645ce (MrKan: USB camera node, camera timing, TASK.md и PEP format
 - Peer IP и GCS IDs фильтруются; команды требуют свежего GCS heartbeat. Reconnect удаляет очередь UDP и heartbeat. Это не криптографическая аутентификация.
 - Локально 29 unit tests PASS; пять новых используют поддельный socket/parser без сетевого обмена. Настоящий pymavlink, ROS/Python2.7 и аппаратура не проверены в этом этапе.
 - На Jetson не переносилось. Полётный возврат не добавлен, disarmed gate сохранён. QGC channel не означает готовность ARM/Takeoff/движения или failsafe в полёте. См. QGC_WIFI.md.
+
+## 2026-10-17 — исправление частоты камеры
+
+Парный тест владельца на Jetson, OpenCV V4L2, YUYV 640x480, запрос30Hz:
+без настройки BUFFERSIZE:120 кадров,28.87Hz,grab33.31ms,retrieve1.32ms;
+BUFFERSIZE=1:120 кадров,15.22Hz,grab63.72ms,retrieve1.99ms.
+Удалена принудительная настройка одного буфера в usb_camera_node.py.
+Частота полного ROS узла после исправления ещё требует проверки на Jetson.
+Это измерение частоты, не калибровка timestamps/экспозиции или latency.

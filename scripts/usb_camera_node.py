@@ -86,8 +86,8 @@ class UsbCameraNode(object):
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         cap.set(cv2.CAP_PROP_FPS, self.fps)
-        # не копим кадры в драйвере, нужен самый свежий
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        # Do not force a single V4L2 buffer: on this Jetson/camera
+        # it reduces measured capture from ~29 Hz to ~15 Hz.
 
         code = int(cap.get(cv2.CAP_PROP_FOURCC))
         fourcc = "".join(chr((code >> 8 * i) & 0xFF) for i in range(4))
