@@ -790,3 +790,11 @@ GitHub main4c645ce (MrKan: USB camera node, camera timing, TASK.md и PEP format
 - Добавлены регрессионные тесты калибровки и CAMERA_BRINGUP.md с процедурами шахматной доски, AprilGrid/Kalibr и ограничениями подключения VINS.
 - Локально Python 3: 24 unit tests PASS (20 существующих, 4 новых). XML launch/package разбирается. Это не catkin/ROS/Python 2.7 или аппаратный тест.
 - На Jetson ничего не перенесено и не перезапущено; калибровочных измерений ещё нет.
+
+## 2026-10-17 — локальный MAVLink relay QGC/AP
+
+- Опциональный fixed-peer UDP relay встроен в единственный UART bridge. Исходные MAVLink bytes/IDs сохраняются, PX4 telemetry/ACK отправляются обратно QGC.
+- Добавлен режим monitor source=qgc и qgc_wifi.launch: heartbeat QGC через Wi-Fi, OK<2s, DEGRADED<4s, LOST>=4s. Старый UDP monitor по умолчанию сохранён.
+- Peer IP и GCS IDs фильтруются; команды требуют свежего GCS heartbeat. Reconnect удаляет очередь UDP и heartbeat. Это не криптографическая аутентификация.
+- Локально 29 unit tests PASS; пять новых используют поддельный socket/parser без сетевого обмена. Настоящий pymavlink, ROS/Python2.7 и аппаратура не проверены в этом этапе.
+- На Jetson не переносилось. Полётный возврат не добавлен, disarmed gate сохранён. QGC channel не означает готовность ARM/Takeoff/движения или failsafe в полёте. См. QGC_WIFI.md.

@@ -65,3 +65,7 @@ Runner временно приостанавливает штатный bridge �
 [USBGS1200P01: запуск, калибровка и запись camera+IMU](CAMERA_BRINGUP.md).
 Точка доступа VIO-HOMING работает по выводу владельца; реальный heartbeat по Wi-Fi пока не проверен.
 Новая локальная подготовка ещё не перенесена на Jetson.
+
+## QGC по Wi-Fi AP (локальная подготовка)
+
+[Канал QGC ↔ Jetson ↔ PX4 и heartbeat](QGC_WIFI.md). Опциональный relay реализован локально; проверка на Jetson/QGC/PX4 ещё предстоит. Полётный homing пока не реализован: текущий adapter рассчитан на disarmed bench.

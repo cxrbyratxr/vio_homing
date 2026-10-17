@@ -50,6 +50,7 @@ if(CATKIN_ENABLE_TESTING)
     PROGRAMS test/homing_interfaces.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
+  catkin_add_nosetests(test/test_qgc_link.py)
   catkin_add_nosetests(test/test_camera_calibration.py)
   catkin_add_nosetests(test/test_homing_logic.py)
   catkin_add_nosetests(test/test_homing_transport.py)

@@ -12,6 +12,8 @@ from collections import deque
 import rospy
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Empty
+from vio_homing.qgc_link import QgcLink
 from pymavlink import mavutil
 from vio_homing.mavlink_homing_adapter import MavlinkHomingAdapter
 
@@ -30,6 +32,19 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
             float(rospy.get_param("~max_timesync_rtt_ms", 50.0)) * 1000000.0
         )
 
+        self.qgc_link = None
+        if rospy.get_param("~enable_qgc_link", False):
+            self.qgc_heartbeat_pub = rospy.Publisher(
+                "/vio_homing/qgc_heartbeat", Empty, queue_size=10)
+            self.qgc_link = QgcLink(
+                rospy.get_param("~qgc_bind_ip", "192.168.50.1"),
+                rospy.get_param("~qgc_bind_port", 14555),
+                rospy.get_param("~qgc_peer_ip"),
+                rospy.get_param("~qgc_peer_port", 14550),
+                lambda: mavutil.mavlink.MAVLink(None),
+                lambda: self.qgc_heartbeat_pub.publish(Empty()),
+                rospy.get_param("~qgc_system_id", 255),
+                rospy.get_param("~qgc_component_id", 190))
         self.master = None
         # Protect all MAVLink TX operations.
         self.tx_lock = threading.RLock()
@@ -86,6 +101,8 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         ) < self.reconnect_not_before and not rospy.is_shutdown():
             time.sleep(0.1)
         self.reset_timesync()
+        if self.qgc_link is not None:
+            self.qgc_link.reset()
 
         rospy.loginfo(
             "Opening MAVLink connection: %s @ %d", self.port, self.baud
@@ -359,6 +376,9 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
             now = time.time()
             if self.master is None or not self.mavlink_alive():
                 raise RuntimeError('PX4 heartbeat/connection lost')
+            if self.qgc_link is not None:
+                with self.tx_lock:
+                    self.qgc_link.receive(now, self.master.write)
             self.tick_homing_io()
 
             if self.timesync_rate > 0:
@@ -378,6 +398,9 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
 
             if msg_type == "BAD_DATA":
                 continue
+
+            if self.qgc_link is not None:
+                self.qgc_link.forward(msg)
 
             if msg_type == "TIMESYNC":
                 self.process_timesync(msg)
@@ -421,6 +444,8 @@ def main():
             time.sleep(3)
 
     bridge.close()
+    if bridge.qgc_link is not None:
+        bridge.qgc_link.close()
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import time
 
 import rospy
 
+from std_msgs.msg import Empty
 from std_msgs.msg import String
 from std_msgs.msg import Bool
 from std_msgs.msg import Float32
@@ -14,6 +15,9 @@ from std_msgs.msg import Float32
 class WifiLinkMonitor(object):
 
     def __init__(self):
+        self.source = rospy.get_param("~source", "udp")
+        if self.source not in ("udp", "qgc"):
+            raise ValueError("Link source must be udp or qgc")
         self.bind_address = rospy.get_param("~bind_address", "0.0.0.0")
         self.port = int(rospy.get_param("~port", 15050))
         self.ok_timeout = float(rospy.get_param("~ok_timeout", 0.5))
@@ -42,21 +46,29 @@ class WifiLinkMonitor(object):
             "/vio_homing/link_packet_count", Float32, queue_size=10
         )
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((self.bind_address, self.port))
-        self.sock.setblocking(False)
-
-        rospy.loginfo(
-            "WiFi link monitor listening on UDP %s:%d", self.bind_address,
-            self.port
-        )
+        self.sock = None
+        if self.source == "qgc":
+            self.qgc_sub = rospy.Subscriber(
+                "/vio_homing/qgc_heartbeat", Empty,
+                self.qgc_heartbeat, queue_size=10)
+        else:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind((self.bind_address, self.port))
+            self.sock.setblocking(False)
+        rospy.loginfo("WiFi link monitor source: %s", self.source)
         rospy.loginfo(
             "LINK_OK < %.2f s, LINK_LOST >= %.2f s", self.ok_timeout,
             self.lost_timeout
         )
 
+    def qgc_heartbeat(self, unused):
+        self.last_packet_time = time.time()
+        self.packet_count += 1
+
     def receive_packets(self):
+        if self.sock is None:
+            return
         while True:
             try:
                 data, address = self.sock.recvfrom(1024)

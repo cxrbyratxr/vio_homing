@@ -1,0 +1,11 @@
+<launch>
+  <!-- Replace the running companion; never launch a second UART owner. -->
+  <arg name="qgc_peer_ip"/>
+  <include file="$(find vio_homing)/launch/companion.launch">
+    <arg name="enable_qgc_link" value="true"/>
+    <arg name="qgc_peer_ip" value="$(arg qgc_peer_ip)"/>
+    <arg name="link_source" value="qgc"/>
+    <arg name="link_ok_timeout" value="2.0"/>
+    <arg name="link_lost_timeout" value="4.0"/>
+  </include>
+</launch>
