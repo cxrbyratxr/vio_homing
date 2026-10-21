@@ -1,0 +1,5 @@
+# Reference for this Pixhawk 6C Mini / PX4 1.16.0 bench only.
+# IMU integration source rate, not the MAVLink packet rate. Requires reboot.
+# Existing bridge requests HIGHRES_IMU 200 Hz independently.
+# Vehicle-Id Component-Id Name Value Type
+1	1	IMU_INTEG_RATE	400	6

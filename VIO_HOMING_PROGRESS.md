@@ -846,3 +846,17 @@ fixed current AP/Mac IP, independent of SSH. Installer rejects live ROS processe
 and saves previous unit/state. AP autoconnect is an explicit operator step.
 Local bash syntax/unit structural checks passed; actual systemd/boot behavior
 must be verified on Jetson. No claims of flight readiness. See systemd/README.md.
+
+## 2026-10-21 — IMU rate corrected at PX4 source
+
+Direct UART reading reproduced~147Hz without ROS/camera. PX4 integration200Hz
+and HIGHRES_IMU scheduler200Hz did not deliver the requested packet cadence.
+Raised only IMU_INTEG_RATE200→400, saved and rebooted Pixhawk; UART460800 and
+MAVLink request200Hz unchanged. Direct UART measured199.36Hz afterward.
+No fabricated/upsampled ROS messages. Details and full-stack measurement:
+[verification/imu_rate/README.md](verification/imu_rate/README.md).
+Odometry,calibration,EKF and failsafe parameters unchanged.
+
+Минутная проверка полного стека после исправления: IMU199.5467Гц, камера30.0034Гц,
+QGC LINK_OK,TIMESYNC OK,нет обратных меток IMU и интервалов>15мс; max9.043мс.
+Подробности и исходный JSON сохранены в verification/imu_rate/.
