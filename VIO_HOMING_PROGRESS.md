@@ -860,3 +860,22 @@ Odometry,calibration,EKF and failsafe parameters unchanged.
 Минутная проверка полного стека после исправления: IMU199.5467Гц, камера30.0034Гц,
 QGC LINK_OK,TIMESYNC OK,нет обратных меток IMU и интервалов>15мс; max9.043мс.
 Подробности и исходный JSON сохранены в verification/imu_rate/.
+
+
+## 2026-10-21 — VINS autostart, EKF2 and OFFBOARD controller
+
+Added VINS+adapter to wireless service, fixed FRD→NED yaw/origin registration
+from matched VINS/PX4 estimator poses while disarmed. Added gated OFFBOARD
+prestream/mode confirmation, position-only current targets, recovery to Hold,
+one-shot LAND and bounded failure/restart handling. No ARM commands.
+Owner explicitly approved EKF2 EV profile and GCS/RC/OFFBOARD failsafe changes;
+readback after PX4 reboot confirmed persistence. Full parameter backups and
+build/runtime evidence in verification/control_stage; operational details and
+limitations in AUTONOMOUS_HOMING.md. Jetson package built; 41 Python2 tests passed.
+Legacy pymavlink ODOMETRY signature handled explicitly so quality cannot be
+misinterpreted as force_mavlink1. Quality=0 means unknown; no fabricated quality.
+Live flight control remains unverified; no claim of flight readiness or drift-free VIO.
+Live integration caveat: 168 ODOMETRY packets sent without TX errors, then VINS
+position discontinuity latched adapter FAULT. Automatic NED alignment did not
+complete; sustained EV fusion and armed control are NOT verified. Keep fault
+visible; do not bypass max_step or freshness checks to obtain an alignment.

@@ -14,7 +14,10 @@
   <arg name="imu_topic" default="/pixhawk/imu"/>
   <arg name="imu_frame_id" default="imu_link"/>
   <arg name="odom_topic" default="/vio/odom_frd"/>
+  <arg name="odom_quality" default="0"/>
   <arg name="enable_homing_commands" default="false"/>
+  <arg name="homing_execution_mode" default="bench"/>
+  <arg name="auto_frd_alignment" default="false"/>
   <arg name="frd_to_ned_alignment_valid" default="false"/>
   <arg name="frd_to_ned_yaw_deg" default="0.0"/>
   <arg name="frd_origin_ned" default="[0.0, 0.0, 0.0]"/>
@@ -28,8 +31,10 @@
     <param name="imu_topic" value="$(arg imu_topic)"/>
     <param name="imu_frame_id" value="$(arg imu_frame_id)"/>
     <param name="odom_topic" value="$(arg odom_topic)"/>
-    <param name="odom_quality" value="0"/>
+    <param name="odom_quality" value="$(arg odom_quality)"/>
     <param name="enable_homing_commands" value="$(arg enable_homing_commands)"/>
+    <param name="homing_execution_mode" value="$(arg homing_execution_mode)"/>
+    <param name="auto_frd_alignment" value="$(arg auto_frd_alignment)"/>
     <param name="frd_to_ned_alignment_valid" value="$(arg frd_to_ned_alignment_valid)"/>
     <param name="frd_to_ned_yaw_deg" value="$(arg frd_to_ned_yaw_deg)"/>
     <rosparam param="frd_origin_ned" subst_value="true">$(arg frd_origin_ned)</rosparam>

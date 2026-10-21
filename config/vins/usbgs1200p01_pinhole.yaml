@@ -1,0 +1,16 @@
+%YAML:1.0
+---
+model_type: PINHOLE
+camera_name: usbgs1200p01
+image_width: 640
+image_height: 480
+distortion_parameters:
+   k1: -0.661664264681774
+   k2: 0.5694542724283947
+   p1: 0.017391840945383177
+   p2: -0.006904139060181542
+projection_parameters:
+   fx: 1078.0448238642819
+   fy: 1082.520777851429
+   cx: 346.5786681459821
+   cy: 186.7711745030109

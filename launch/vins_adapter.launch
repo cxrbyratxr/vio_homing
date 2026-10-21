@@ -1,0 +1,10 @@
+<launch>
+  <arg name="input_topic" default="/vins_estimator/odometry"/>
+  <arg name="output_topic" default="/vio/odom_frd"/>
+  <arg name="stamp_offset" default="-0.03275171186939631"/>
+  <node pkg="vio_homing" type="vins_odometry_adapter.py" name="vins_odometry_adapter" output="screen" required="true">
+    <param name="input_topic" value="$(arg input_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="stamp_offset" value="$(arg stamp_offset)"/>
+  </node>
+</launch>

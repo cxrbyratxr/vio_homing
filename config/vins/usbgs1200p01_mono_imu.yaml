@@ -1,0 +1,45 @@
+%YAML:1.0
+---
+# Preliminary 640x480 calibration. See VINS_SETUP.md before use.
+imu: 1
+num_of_cam: 1
+imu_topic: "/pixhawk/imu"
+image0_topic: "/camera/image_raw"
+image1_topic: ""
+output_path: "/home/jetson/vio_data/vins"
+cam0_calib: "usbgs1200p01_pinhole.yaml"
+image_width: 640
+image_height: 480
+# Camera optical -> ROS imu_link (FLU). Inverse of Kalibr T_cam_imu.
+estimate_extrinsic: 0
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [-0.003278033793171688, -0.9990921538568884, 0.04247496434437495, 0.05073958905620007,
+          -0.9984897465714395, 0.0009407734846816744, -0.0549303280251849, -0.008384521797324664,
+          0.05484050041852935, -0.04259087985538241, -0.9975863553933519, -0.07767744242505423,
+          0, 0, 0, 1]
+multiple_thread: 1
+max_cnt: 150
+min_dist: 30
+F_threshold: 1.0
+show_track: 0
+flow_back: 1
+# Seconds; source comment incorrectly labels this as milliseconds.
+max_solver_time: 0.04
+max_num_iterations: 8
+keyframe_parallax: 10.0
+# VINS EuRoC example defaults, provisional; NOT measured IMU noise.
+# Do not blindly copy Kalibr continuous noise densities into these fields.
+acc_n: 0.1
+gyr_n: 0.01
+acc_w: 0.001
+gyr_w: 0.0001
+g_norm: 9.81
+# VINS aligns IMU integration at image timestamp + td; same sign as Kalibr.
+estimate_td: 0
+td: -0.03275171186939631
+load_previous_pose_graph: 0
+pose_graph_save_path: "/home/jetson/vio_data/vins/pose_graph"
+save_image: 0

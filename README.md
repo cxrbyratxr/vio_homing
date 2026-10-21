@@ -1,104 +1,75 @@
-# VIO Homing
+# VIO Homing — рабочий пакет Jetson
 
-Программный стек ROS Melodic / Python 2.7 для Jetson Nano и Pixhawk 6C Mini.
-Актуальное состояние: **21 октября 2026 года**.
+ROS Melodic / Python 2.7, Jetson Nano, Pixhawk 6C Mini (PX4 1.16.0).
 
-## Что готово
-
-- UART/MAVLink Jetson ↔ PX4, TIMESYNC, получение IMU около 200 Гц.
-- USBGS1200P01: цветное изображение 640×480 при 30 Гц.
-- AP VIO-HOMING: SSH, QGC и просмотр изображения в браузере по Wi-Fi.
-- Единый запуск и сервис `vio-wireless.service`, независимый от SSH.
-- Запись локального маршрута, `last_good_link_pose`, обратный `return_path`.
-- Homing manager: потеря heartbeat → цели возврата → WAIT_LINK ≥60 с → LAND;
-  восстановление связи отменяет RETURN и ожидающую LAND.
-- Текущая цель передаётся через SET_POSITION_TARGET_LOCAL_NED, LAND — через
-  COMMAND_LONG/MAV_CMD_NAV_LAND. Это реализовано для разоружённого стенда.
-- Kalibr собран на Jetson, AprilGrid подготовлена, фокус зафиксирован владельцем.
-
-На стенде Jetson Nano + Pixhawk 6C Mini подтверждён программный тракт от детекции
-потери связи и формирования обратной траектории до передачи команд возврата и
-LAND в PX4. Движение в этом сценарии задавалось синтетической odometry.
-
-**Система пока не готова к полёту.** Реальная VIO не подключена, полётный
-переход к возврату не реализован; в рабочем беспроводном запуске homing-команды
-и привязка FRD→NED выключены. ODOMETRY сообщает положение, SETPOINT задаёт цель —
-это разные интерфейсы.
-
-## Текущий стенд
-
-```text
-Mac (QGC + браузер + SSH)
-        ↕ Wi-Fi AP VIO-HOMING
-Jetson Nano ← USB-камера USBGS1200P01
-        ↕ UART / TELEM2, 460800 бод
-Pixhawk 6C Mini / PX4 1.16.0
-```
-
-Ethernet и USB-C к Pixhawk доступны как дополнительные способы обслуживания.
-Моторов, ESC, пропеллеров и полноценного БВС на текущем стенде нет.
-GPS запланирован к подключению; его работоспособность пока не подтверждена.
-
-| Интерфейс | Текущее значение |
-|---|---|
-| Jetson AP / SSH | 192.168.50.1 |
-| Mac Wi-Fi / получатель QGC | 192.168.50.24; адрес может измениться по DHCP |
-| QGC UDP | Mac:14550 ↔ Jetson:14555 |
-| Видео | http://192.168.50.1:8080/stream?topic=/camera/image_raw |
-| UART Jetson / PX4 | /dev/ttyTHS1 / /dev/ttyS3 |
-| PX4 параметры связи | SER_TEL2_BAUD=460800, MAV_1_RATE=30000 |
-| Интеграция IMU PX4 | IMU_INTEG_RATE=400; передача HIGHRES_IMU запрошена отдельно на 200 Гц |
-| Изображение | /camera/image_raw, sensor_msgs/Image, bgr8 |
-| IMU | /pixhawk/imu, sensor_msgs/Imu; запрос 200 Гц |
-
-Частота IMU после исправления 21.10.2026: **199,55 Гц** за минуту при работающей камере и QGC.
-Владелец подтвердил работу беспроводного запуска и сервисного этапа.
-Автозапуск после полного выключения питания ещё следует отдельно подтвердить.
-
-## Запуск и обслуживание
-
-Установленный сервис управляет всем стеком:
+## Запуск
 
 ```bash
-sudo systemctl start vio-wireless.service
-systemctl status vio-wireless.service --no-pager -l
-journalctl -u vio-wireless.service -n 50 --no-pager
+sudo systemctl restart vio-wireless.service
+journalctl -u vio-wireless.service -f -n 30 -o cat
 ```
 
-Не запускать второй companion, камеру, видеосервер или roscore поверх сервиса.
-Старый `vio-homing.service` отключён при установке нового сервиса.
-Обычный `companion.launch` сохраняет старые значения по умолчанию, включая UART
-115200; для текущего стенда используется `wireless.launch` через wrapper/service.
+Сервис запускает камеру, MAVLink/IMU/QGC, VINS, адаптер одометрии,
+trajectory_recorder, homing_manager и браузерное видео. Не запускайте второй
+экземпляр этих узлов вручную. После сброса VINS нужна новая сессия всего стека,
+чтобы старый маршрут не остался в другой системе координат.
 
-## Что нужно до первого взлёта
+## Наблюдение по SSH
 
-1. Собрать БВС, установить и закрепить силовую часть, питание и оборудование.
-2. Откалибровать объектив и camera–IMU, проверить отчёты калибровки.
-3. Настроить реальную VIO и преобразование её odometry к координатам PX4.
-4. Подключить GPS, добавить контроль пригодности навигации и точку последнего
-   устойчивого GPS отдельно от точки устойчивой связи.
-5. Реализовать полётный переход к возврату, передачу управления оператору,
-   взаимодействие с режимами и failsafe PX4.
-6. Настроить управление QGC, аппарат и датчики PX4; устранить сохраняющиеся
-   ошибки ориентации, магнитного поля и навигации без отключения защит.
-7. Пройти наземную подготовку и контролируемые первые полёты.
+```bash
+source ~/catkin_ws/devel/setup.bash
+unset ROS_HOSTNAME
+export ROS_IP=192.168.50.1 ROS_MASTER_URI=http://localhost:11311
+rosrun vio_homing vins_displacement.py
+```
 
-До AprilGrid-записи можно завершить устойчивость автозапуска, диагностику
-беспроводной связи, GPS-логику и подготовку управления в симуляторе.
+`r` + Enter — новый ноль индикатора. Обнуление не исправляет VINS и не снимает
+FAULT адаптера. См. VINS_DISPLAY.md.
 
-## Документация
+```bash
+rostopic echo -n 1 /vio_homing/vins_adapter_status
+rostopic echo -n 1 /vio_homing/mavlink_transport_status
+```
 
-- [Краткий статус и оставшиеся этапы](PROJECT_STATUS.md).
-- [Wi-Fi, запуск камеры и QGC](WIRELESS_SETUP.md).
-- [Установка сервиса](systemd/README.md).
-- [Подключение камеры и калибровка](CAMERA_BRINGUP.md).
-- [Интерфейс QGC/MAVLink](QGC_WIFI.md).
-- [История проекта](VIO_HOMING_PROGRESS.md).
-- [ТЗ](TASK.md), [окружение](ENVIRONMENT.md).
-- [Предыдущий PX4 bench](PX4_HOMING_BENCH.md),
-  [объединение с кодом коллеги](MERGE_REPORT.md), [стиль кода](DEVELOPMENT.md).
+## Состав
 
-Подробные протоколы прошлых проверок сохранены в `verification/`; их исторические
-настройки не заменяют текущие параметры беспроводного стенда.
+- `scripts/`: рабочие ROS узлы, индикатор перемещения, проверки IMU/камеры.
+- `src/vio_homing/`: координаты, контроль данных, логика возврата и MAVLink.
+- `launch/`: companion, wireless, VINS, адаптер, камера и запись camera–IMU.
+- `config/`: параметры VINS/камеры, справочный профиль PX4.
+- `systemd/`: сервис и установка автозапуска.
 
-[Диагностика и исправление фактической частоты IMU](verification/imu_rate/README.md).
+## Интерфейсы
+
+| Назначение | Значение |
+|---|---|
+| Jetson AP/SSH | 192.168.50.1 |
+| Mac / QGC | 192.168.50.24, UDP 14550; при смене адреса обновить peer |
+| Приём QGC на Jetson | UDP 14555 |
+| Видео | http://192.168.50.1:8080/stream?topic=/camera/image_raw |
+| UART | Jetson /dev/ttyTHS1 → PX4 /dev/ttyS3, 460800 |
+| IMU | /pixhawk/imu, около 200 Гц |
+| Камера | /camera/image_raw, 640×480 YUYV, около 30 Гц |
+| VINS | /vins_estimator/odometry |
+| Одометрия для PX4/возврата | /vio/odom_frd |
+| Обратный маршрут / цель | /vio_homing/return_path / /vio_homing/return_goal |
+
+ODOMETRY передаёт оценку положения; SET_POSITION_TARGET_LOCAL_NED — текущую цель.
+Путь остаётся на Jetson. Возврат: RETURN → WAIT_LINK ≥60 с → LAND; восстановление
+GCS отменяет RETURN/WAIT_LINK. Flight-контроллер не ARMит аппарат и не выдаёт
+управление в disarmed/наземном состоянии.
+
+Документы: AUTONOMOUS_HOMING.md (EKF2/координаты/управление), VINS_SETUP.md
+(калибровка), WIRELESS_SETUP.md, QGC_WIFI.md, CAMERA_BRINGUP.md, TASK.md.
+
+## Очистка
+
+21.10.2026 тестовые/synthetic сценарии и исторические verification-артефакты
+удалены из рабочего дерева по запросу владельца. Резервная копия и список
+удалений указаны в CLEANUP.md. Калибровочные bag/YAML/PDF сохранены.
+Старые документы прогресса описывают исторические этапы, включая удалённые тесты.
+
+Работа VINS и минимальный дрейф на месте подтверждены владельцем для текущей
+сессии. Прежние сессии имели расхождение; точность, масштаб и поведение на всём
+маршруте этим не подтверждены. Реальное выполнение OFFBOARD/возврата/LAND на
+полноценном аппарате не подтверждено. Система не объявляется готовой к полёту.

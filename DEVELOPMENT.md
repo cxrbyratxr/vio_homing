@@ -4,15 +4,15 @@ Runtime проекта: ROS Melodic, Python 2.7. Скрипты и библио�
 
 ## Форматирование
 
-Python: PEP 8, 4 пробела, строки до79 символов, LF. Настройки YAPF/pycodestyle находятся в setup.cfg, настройки редакторов — в .editorconfig. Для ROS launch/XML используется отступ2 пробела. Архивные verification-логи сохраняются как были получены.
+Python: PEP 8, 4 пробела, строки до79 символов, LF. Настройки YAPF/pycodestyle находятся в setup.cfg, настройки редакторов — в .editorconfig. Для ROS launch/XML используется отступ2 пробела. Исторические тесты и verification-логи вынесены в резервную копию; см. CLEANUP.md.
 
 Инструменты форматирования запускаются на Mac в отдельном Python3 окружении:
 
 ```bash
 python3 -m venv /tmp/vio-format-env
 /tmp/vio-format-env/bin/python -m pip install -r requirements-format.txt
-/tmp/vio-format-env/bin/yapf --style setup.cfg --in-place --recursive scripts src test setup.py
-/tmp/vio-format-env/bin/pycodestyle scripts src test setup.py
+/tmp/vio-format-env/bin/yapf --style setup.cfg --in-place --recursive scripts src setup.py
+/tmp/vio-format-env/bin/pycodestyle scripts src setup.py
 ```
 
 YAPF и pycodestyle не являются runtime-зависимостями Jetson. E402 допускается для выбора MAVLINK20 до импорта pymavlink; W503/W504 допускают поддерживаемые PEP8 варианты переноса операторов. Остальные правила pycodestyle включены.

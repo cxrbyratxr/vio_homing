@@ -10,13 +10,14 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool, String
 from pymavlink import mavutil
 from vio_homing.homing_transport import FrdToNed, HomingTransport
+from vio_homing.flight_homing_adapter import FlightHomingAdapter
 
 
 def xyz(pose):
     return (pose.position.x, pose.position.y, pose.position.z)
 
 
-class MavlinkHomingAdapter(object):
+class MavlinkHomingAdapter(FlightHomingAdapter):
 
     def init_homing_adapter(self):
         self.control_lock = threading.RLock()
@@ -59,6 +60,7 @@ class MavlinkHomingAdapter(object):
             queue_size=10,
             latch=True
         )
+        self.init_flight_control()
         self.control_subs = [
             rospy.Subscriber(
                 '/vio_homing/homing_session', String, self.homing_session_cb
@@ -125,6 +127,7 @@ class MavlinkHomingAdapter(object):
                 xyz(msg.pose.pose), msg.header.frame_id,
                 msg.header.stamp.to_sec(), rospy.get_time()
             )
+            self.flight_local_pose(msg)
 
     def heartbeat_received(self, msg):
         with self.control_lock:
@@ -132,6 +135,7 @@ class MavlinkHomingAdapter(object):
             self.px4_armed = bool(
                 msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED
             )
+            self.flight_heartbeat(msg)
             if self.original_mode is None:
                 self.original_mode = (
                     (msg.custom_mode >> 16) & 255,
@@ -149,6 +153,7 @@ class MavlinkHomingAdapter(object):
         with self.control_lock:
             self.last_px4_heartbeat = None
             self.transport.link_lost()
+            self.flight_disconnected()
             if self.land_pending is not None:
                 self.land_ack = 'LINK_LOST_BEFORE_ACK'
                 self.land_pending = None
@@ -161,6 +166,11 @@ class MavlinkHomingAdapter(object):
         self.tx_event_pub.publish(String(data=json.dumps(event)))
 
     def tick_homing_io(self):
+        if self.execution_mode == 'flight':
+            return self.tick_flight_io()
+        return self.tick_bench_homing_io()
+
+    def tick_bench_homing_io(self):
         with self.control_lock:
             now = rospy.get_time()
             alive = self.mavlink_alive()
@@ -234,6 +244,7 @@ class MavlinkHomingAdapter(object):
             return
         with self.control_lock:
             result = int(msg.result)
+            self.flight.acknowledge(int(msg.command), result)
             entry = mavutil.mavlink.enums['MAV_RESULT'].get(result)
             name = entry.name if entry is not None else str(result)
             if int(msg.command) == 21 and self.land_pending is not None:
@@ -274,6 +285,7 @@ class MavlinkHomingAdapter(object):
                 odom_tx_errors=self.odom_tx_error_count,
                 imu_rx=self.imu_count
             )
+            data.update(self.flight_status())
             self.transport_pub.publish(String(data=json.dumps(data)))
 
     def console_request_cb(self, msg):

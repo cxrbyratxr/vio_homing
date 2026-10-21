@@ -42,6 +42,8 @@ else:
     sys.exit('ROS master already running; stop the old stack first.')
 for kind, port in ((socket.SOCK_DGRAM, 14555), (socket.SOCK_STREAM, 8080)):
     sock = socket.socket(socket.AF_INET, kind)
+    if kind == socket.SOCK_STREAM:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         sock.bind(('', port))
     except socket.error:
@@ -49,4 +51,5 @@ for kind, port in ((socket.SOCK_DGRAM, 14555), (socket.SOCK_STREAM, 8080)):
     finally:
         sock.close()
 CHECK
+mkdir -p "$HOME/vio_data/vins/pose_graph"
 exec roslaunch vio_homing wireless.launch "jetson_ip:=$ROS_IP" "$@"
