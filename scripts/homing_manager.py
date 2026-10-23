@@ -5,6 +5,7 @@
 Outputs are ROS goals and LAND intent; the shared bridge transports them.
 """
 import copy
+import math
 import threading
 import uuid
 
@@ -30,14 +31,20 @@ class HomingManager(object):
             wait_link_seconds=float(
                 rospy.get_param('~wait_link_seconds', 60.0)
             ),
-            odom_timeout=float(rospy.get_param('~odom_timeout', 1.0))
+            odom_timeout=float(rospy.get_param('~odom_timeout', 1.0)),
+            arrival_dwell=float(rospy.get_param('~arrival_dwell', 0.5)),
+            arrival_speed=float(rospy.get_param('~arrival_speed', 0.5)),
+            progress_timeout=float(rospy.get_param('~progress_timeout', 15.0)),
+            waypoint_timeout=float(rospy.get_param('~waypoint_timeout', 60.0))
         )
+        self.navigation_epoch = None
         self.candidate_path = None
         self.return_ready = False
         self.last_good_msg = None
         self.active_poses = []
         self.active_endpoint = None
         self.previous_state = None
+        self.reason_pub = rospy.Publisher('/vio_homing/homing_reason', String, queue_size=1, latch=True)
         self.session_pub = rospy.Publisher(
             '/vio_homing/homing_session', String, queue_size=1, latch=True
         )
@@ -80,12 +87,29 @@ class HomingManager(object):
                 queue_size=20
             )
         ]
+        self.epoch_sub = rospy.Subscriber('/vio_homing/navigation_epoch', String, self.on_epoch, queue_size=1)
         self.publish_state()
         self.timer = rospy.Timer(rospy.Duration(0.05), self.tick)
         rospy.loginfo(
             'Homing manager: stand ROS outputs, wait %.1f s, radius %.2f m',
             self.logic.wait_link_seconds, self.logic.arrival_radius
         )
+
+    def on_epoch(self, msg):
+        with self.lock:
+            if self.navigation_epoch == msg.data:
+                return
+            self.navigation_epoch = msg.data
+            old = self.logic
+            self.logic = HomingLogic(old.arrival_radius, old.wait_link_seconds, old.odom_timeout,
+                                     old.arrival_dwell, old.arrival_speed, old.progress_timeout,
+                                     old.progress_distance, old.waypoint_timeout)
+            self.candidate_path = self.last_good_msg = None
+            self.return_ready = False
+            self.active_poses = []
+            self.active_endpoint = None
+            self.session_pub.publish(String(data=str(uuid.uuid4())))
+            self.publish_state()
 
     def publish_state(self):
         state = self.logic.state
@@ -94,7 +118,8 @@ class HomingManager(object):
             self.previous_state = state
         self.state_pub.publish(String(data=state))
         self.active_pub.publish(Bool(data=state in ('RETURN', 'WAIT_LINK')))
-        self.land_pub.publish(Bool(data=state == 'LAND'))
+        self.land_pub.publish(Bool(data=state in ('LAND', 'ABORT')))
+        self.reason_pub.publish(String(data=self.logic.reason))
 
     def on_link(self, msg):
         with self.lock:
@@ -112,7 +137,7 @@ class HomingManager(object):
 
     def on_path(self, msg):
         with self.lock:
-            if self.logic.state in ('RETURN', 'WAIT_LINK', 'LAND'):
+            if self.logic.state in ('RETURN', 'WAIT_LINK', 'LAND', 'ABORT'):
                 return  # The active episode uses an immutable route snapshot.
             if not msg.poses:
                 self.candidate_path = None
@@ -131,7 +156,8 @@ class HomingManager(object):
         with self.lock:
             self.logic.set_odom(
                 position(msg.pose.pose), msg.header.frame_id,
-                msg.header.stamp.to_sec(), rospy.get_time()
+                msg.header.stamp.to_sec(), rospy.get_time(),
+                math.sqrt(sum(v*v for v in (msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z)))
             )
 
     def start_return(self):

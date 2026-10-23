@@ -16,6 +16,7 @@
   <arg name="frd_to_ned_yaw_deg" default="0.0" />
   <arg name="frd_origin_ned" default="[0.0, 0.0, 0.0]" />
   <node pkg="vio_homing" type="mavlink_imu_bridge.py" name="mavlink_imu_bridge" output="screen" respawn="false">
+    <param name="enable_px4_health_probe" value="true" />
     <param name="enable_qgc_link" value="$(arg enable_qgc_link)" />
     <param name="qgc_bind_ip" value="$(arg qgc_bind_ip)" />
     <param name="imu_rate_hz" value="$(arg imu_rate_hz)" />

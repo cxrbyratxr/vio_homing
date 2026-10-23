@@ -7,6 +7,7 @@ os.environ["MAVLINK20"] = "1"
 
 import time
 import math
+import numbers
 import json
 import threading
 from collections import deque
@@ -93,7 +94,7 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         try:
             values = json.loads(msg.data)
             lat, lon, alt = [values[k] for k in ('latitude', 'longitude', 'altitude')]
-            if any(isinstance(v, bool) or not isinstance(v, (int, long)) for v in (lat, lon, alt)):
+            if any(isinstance(v, bool) or not isinstance(v, numbers.Integral) for v in (lat, lon, alt)):
                 raise ValueError('Origin requires integer degE7/degE7/mm MSL')
             if not (-900000000 <= lat <= 900000000 and -1800000000 <= lon <= 1800000000 and -1000000 <= alt <= 10000000):
                 raise ValueError('Invalid origin range')
@@ -102,6 +103,8 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
                     raise ValueError('Origin requires live disarmed PX4 on ground')
                 if self.known_global_origin is not None and self.known_global_origin != (lat, lon, alt):
                     raise ValueError('Refusing to replace an already observed different EKF origin')
+                if not self.new_navigation_epoch('GLOBAL_ORIGIN_REQUEST'):
+                    raise ValueError('Cannot reset navigation epoch before origin')
                 with self.tx_lock:
                     self.master.mav.set_gps_global_origin_send(self.master.target_system, lat, lon, alt)
                     self.master.mav.command_long_send(self.master.target_system,
@@ -456,6 +459,7 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
             if self.qgc_link is not None:
                 with self.tx_lock:
                     self.qgc_link.receive(now, self.master.write)
+            self.tick_health_probe()
             self.tick_homing_io()
 
             if self.timesync_rate > 0:
@@ -504,8 +508,11 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
                                   msg.result)
                 self.command_ack_received(msg)
 
-            elif msg_type == 'SERIAL_CONTROL' and self.bench_enabled:
-                self.serial_control_received(msg)
+            elif msg_type == 'SERIAL_CONTROL' and msg.get_srcSystem() == self.master.target_system and msg.get_srcComponent() == self.master.target_component:
+                if self.health_probe.pending and msg.device == 10 and msg.count:
+                    self.health_probe.feed(bytearray(msg.data[:msg.count]).decode('utf-8', 'replace'), rospy.get_time())
+                elif self.bench_enabled:
+                    self.serial_control_received(msg)
 
             self.print_status()
 

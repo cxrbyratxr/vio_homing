@@ -19,6 +19,7 @@ class Alignment(object):
         self.reason = 'WAITING_FOR_EKF_AND_VINS'
         self.fault = False
         self.last_stamp = None
+        self.bad_since = None
 
     def invalidate(self, reason):
         self.valid = False
@@ -34,7 +35,20 @@ class Alignment(object):
             self.invalidate('PX4_ESTIMATOR_RESET')
             return
         self.reset_counter = px4[3]
-        if self.valid or not disarmed or abs(local[0]-px4[0]) > .12:
+        if abs(local[0]-px4[0]) > .12:
+            return
+        if self.valid:
+            residual = np.linalg.norm(np.array(self.transform.convert(local[1]))-np.array(px4[1]))
+            difference = rotation(px4[2]).dot(rotation(local[2]).T)
+            if residual > 1. or difference[2, 2] < math.cos(math.radians(15)):
+                if self.bad_since is None:
+                    self.bad_since = local[0]
+                elif local[0]-self.bad_since >= .5:
+                    self.invalidate('VIO_EKF_DISAGREEMENT')
+            else:
+                self.bad_since = None
+            return
+        if not disarmed:
             return
         if self.last_stamp is not None and local[0] <= self.last_stamp:
             return

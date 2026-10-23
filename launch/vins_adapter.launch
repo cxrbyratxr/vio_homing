@@ -5,6 +5,10 @@
   <node pkg="vio_homing" type="vins_odometry_adapter.py" name="vins_odometry_adapter" output="screen" required="true">
     <param name="input_topic" value="$(arg input_topic)"/>
     <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="max_speed" value="5.0"/>
+    <param name="max_acceleration" value="12.0"/>
+    <param name="max_step" value="1.0"/>
+    <param name="settle_seconds" value="3.0"/>
     <param name="stamp_offset" value="$(arg stamp_offset)"/>
   </node>
 </launch>

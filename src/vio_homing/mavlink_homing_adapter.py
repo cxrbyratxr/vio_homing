@@ -301,7 +301,7 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
             if not allowed or len(command) > 68:
                 raise ValueError('Read-only bench command not allowed')
             with self.control_lock:
-                if self.console_pending is not None or not self.mavlink_alive(
+                if self.console_pending is not None or self.health_probe.pending or not self.mavlink_alive(
                 ):
                     raise ValueError('Console busy or link unavailable')
                 data = bytearray((command + '\n').encode('utf-8'))

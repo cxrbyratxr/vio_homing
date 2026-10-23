@@ -6,6 +6,7 @@ import numpy as np
 import rospy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, String
+from vio_homing.vio_safety import VioGuard
 from vio_homing.vins_frames import convert, angular_velocity, pose_covariance
 
 
@@ -18,6 +19,9 @@ class Adapter(object):
         self.timeout = float(rospy.get_param('~timeout', 1.0))
         self.max_age = float(rospy.get_param('~max_age', 0.5))
         self.max_step = float(rospy.get_param('~max_step', 1.0))
+        self.guard = VioGuard(float(rospy.get_param('~max_speed', 5.0)),
+                              float(rospy.get_param('~max_acceleration', 12.0)),
+                              self.max_step, float(rospy.get_param('~settle_seconds', 3.0)))
         self.stamp_offset = float(rospy.get_param('~stamp_offset', -0.03275171186939631))
         self.input = rospy.get_param('~input_topic', '/vins_estimator/odometry')
         self.output = rospy.get_param('~output_topic', '/vio/odom_frd')
@@ -93,19 +97,18 @@ class Adapter(object):
                     dt = (stamp-old_stamp).to_sec()
                     if dt <= 0 or dt > self.timeout or msg.header.seq <= old_seq:
                         raise ValueError('Timestamp/sequence discontinuity')
-                    step = float(np.linalg.norm(position-old_position))
-                    if step > self.max_step:
-                        rospy.logwarn_throttle(1.0,
-                            'VINS position jump %.3f m in %.3f s; forwarding by operator request' % (step, dt))
                     omega = angular_velocity(old_orientation, orientation, dt)
+                    if np.linalg.norm(omega) > 5.:
+                        raise ValueError('VIO angular rate > 5 rad/s')
+                ready = self.guard.observe([p.x, p.y, p.z], [v.x, v.y, v.z], stamp.to_sec())
             except (ValueError, TypeError, OverflowError) as error:
                 self.fail(str(error))
                 return
             self.previous = (stamp, position, orientation, msg.header.seq)
             self.last_receipt = now
             # First pose establishes the derivative baseline; do not invent angular velocity.
-            if dt is None:
-                self.status.publish('WAITING_FOR_SECOND_POSE')
+            if dt is None or not ready:
+                self.status.publish('WAITING_FOR_STABLE_VINS: ' + self.guard.reason)
                 return
             out = Odometry()
             out.header.stamp = stamp

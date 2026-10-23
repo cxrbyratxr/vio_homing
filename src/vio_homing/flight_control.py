@@ -15,8 +15,12 @@ class FlightControl(object):
         self.pending = None
         self.ack = None
         self.session = None
+        self.land_attempted = False
+        self.entry_mode = None
 
     def command(self, kind, now):
+        if kind == 'LAND':
+            self.land_attempted = True
         self.pending = kind
         self.ack = None
         self.started = now
@@ -49,14 +53,31 @@ class FlightControl(object):
             self.session = session
             return None, self.command('LAND', now)
         self.session = session
+        if self.phase == 'ACTIVE' and mode != OFFBOARD:
+            self.phase, self.reason = 'FAULT', 'PX4_MODE_CHANGED'
+            self.owned = False
+            return None, None
+        if self.phase in ('PRESTREAM', 'REQUEST_OFFBOARD') and mode not in (self.entry_mode, OFFBOARD):
+            self.phase, self.reason = 'FAULT', 'OPERATOR_MODE_CHANGED'
+            return None, None
         if self.phase == 'FAULT':
+            if (land and not self.land_attempted and self.reason == 'INVALID_NAV_BEFORE_TAKEOVER'
+                    and mode in (self.entry_mode, OFFBOARD)):
+                self.phase, self.reason = 'REQUEST_LAND', 'MANAGER_ABORT_AFTER_BLOCKED_TAKEOVER'
+                return None, self.command('LAND', now)
             if normal:
                 self.phase, self.reason = 'IDLE', 'RECOVERED_WAITING_NEW_EPISODE'
+                self.land_attempted = False
             return None, None
+        if land and not self.land_attempted and mode != LAND and self.phase in ('IDLE', 'PRESTREAM', 'REQUEST_OFFBOARD', 'ACTIVE'):
+            self.phase, self.reason = 'REQUEST_LAND', 'MANAGER_LAND_OR_ABORT'
+            return None, self.command('LAND', now)
         if self.phase == 'IDLE':
             if requested and healthy and target is not None and position is not None:
                 self.phase, self.reason = 'PRESTREAM', 'OFFBOARD_WARMUP'
                 self.started, self.hold = now, tuple(position)
+                self.entry_mode = mode
+                self.land_attempted = False
             return self.hold if self.phase == 'PRESTREAM' else None, None
         if self.phase in ('PRESTREAM', 'REQUEST_OFFBOARD', 'ACTIVE'):
             # An operator/PX4 mode change after takeover relinquishes ownership.

@@ -52,7 +52,7 @@ ODOMETRY передаёт оценку положения; SET_POSITION_TARGET_L
 GCS отменяет RETURN/WAIT_LINK. Flight-контроллер не ARMит аппарат и не выдаёт
 управление в disarmed/наземном состоянии.
 
-Документы: AUTONOMOUS_HOMING.md (EKF2/координаты/управление), VINS_SETUP.md
+Документы: SAFETY_BEHAVIOR.md (отказы и ограничения), AUTONOMOUS_HOMING.md (EKF2/координаты/управление), VINS_SETUP.md
 (калибровка), WIRELESS_SETUP.md, QGC_WIFI.md, CAMERA_BRINGUP.md, TASK.md.
 
 ## Очистка

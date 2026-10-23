@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """PX4 telemetry, automatic frame registration and offboard mode handover."""
 import struct
+import uuid
 import time
 from collections import deque
 import numpy as np
@@ -9,6 +10,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from pymavlink import mavutil
 from vio_homing.px4_alignment import Alignment
+from vio_homing.px4_health import Px4Health
 from vio_homing.flight_control import FlightControl, OFFBOARD, HOLD
 
 
@@ -19,7 +21,12 @@ class FlightHomingAdapter(object):
             raise ValueError('homing_execution_mode must be bench or flight')
         self.auto_alignment = bool(rospy.get_param('~auto_frd_alignment', False))
         self.alignment = Alignment()
+        self.ekf_realign_pending = False
         self.flight = FlightControl()
+        self.health_probe = Px4Health()
+        self.enable_health_probe = bool(rospy.get_param('~enable_px4_health_probe', True))
+        self.readiness_since = None
+        self.return_blocked_since = None
         self.local_poses = deque(maxlen=50)
         self.px4_pose = None
         self.px4_pose_received = None
@@ -37,17 +44,66 @@ class FlightHomingAdapter(object):
                               'COM_DLL_EXCEPT', 'COM_RCL_EXCEPT', 'NAV_DLL_ACT',
                               'COM_OBL_RC_ACT', 'COM_OF_LOSS_T']
         self.profile_requested = 0.
+        self.profile_names += ['COM_DL_LOSS_T', 'COM_FAIL_ACT_T']
+        self.link_loss_timeout = 4.
         self.feedback_pub = rospy.Publisher('/vio_homing/px4_odometry', Odometry, queue_size=10)
+        self.last_vins_health = None
+        self.last_odometry_reset = None
+        self.navigation_epoch = str(uuid.uuid4())
+        self.epoch_pub = rospy.Publisher('/vio_homing/navigation_epoch', String, queue_size=1, latch=True)
+        self.epoch_pub.publish(String(data=self.navigation_epoch))
         self.vins_health_sub = rospy.Subscriber('/vio_homing/vins_adapter_status', String, self.vins_health_cb)
         if self.auto_alignment:
             self.transport.alignment_valid = False
 
+    def new_navigation_epoch(self, reason):
+        if (self.px4_armed is not False or self.landed_state != 1
+                or self.landed_received is None or not 0 <= rospy.get_time()-self.landed_received < 2.
+                or not self.mavlink_alive()):
+            self.alignment.invalidate(reason)
+            self.transport.alignment_valid = False
+            return False
+        self.alignment = Alignment()
+        self.ekf_realign_pending = False
+        self.local_poses.clear()
+        self.transport.alignment_valid = False
+        self.transport.eligible_land = False
+        self.readiness_since = None
+        self.navigation_epoch = str(uuid.uuid4())
+        self.epoch_pub.publish(String(data=self.navigation_epoch))
+        rospy.logwarn('Navigation epoch reset on ground: %s; recorded route is cleared', reason)
+        return True
+
     def vins_health_cb(self, msg):
-        if msg.data.startswith('FAULT'):
-            with self.control_lock:
+        with self.control_lock:
+            previous = self.last_vins_health
+            self.last_vins_health = msg.data
+            if msg.data.startswith('FAULT'):
                 self.alignment.invalidate('VINS_ADAPTER_FAULT')
-                if self.auto_alignment:
-                    self.transport.alignment_valid = False
+                self.transport.alignment_valid = False
+            elif msg.data == 'ACTIVE' and previous is not None and previous != 'ACTIVE':
+                self.new_navigation_epoch('VINS_SESSION_READY')
+            elif msg.data.startswith('WAITING') and previous == 'ACTIVE':
+                self.new_navigation_epoch('VINS_SESSION_RESTART')
+
+    def tick_health_probe(self):
+        if (not self.enable_health_probe or not self.mavlink_alive() or self.master is None
+                or self.get_clock_offset_ns() is None):
+            return
+        now = rospy.get_time()
+        probe = self.health_probe
+        if probe.pending:
+            quiet = probe.last_rx is not None and now-probe.last_rx >= .15
+            if quiet or now-probe.started >= 2.:
+                probe.finish(now, lambda usec: self.px4_time_to_ros(usec).to_sec(), now)
+                with self.tx_lock:
+                    self.master.mav.serial_control_send(10, 0, 0, 0, 0, [0]*70)
+        elif now-probe.last_query >= 1.5 and self.console_pending is None:
+            data = bytearray(probe.COMMAND.encode('ascii'))
+            probe.begin(now)
+            with self.tx_lock:
+                self.master.mav.serial_control_send(10, 2 | 4 | 16, 0, 0,
+                    len(data), list(data)+[0]*(70-len(data)))
 
     def request_flight_telemetry(self):
         if self.execution_mode != 'flight' and not self.auto_alignment:
@@ -63,6 +119,7 @@ class FlightHomingAdapter(object):
         if self.master is None:
             return
         self.profile_requested = time.time()
+        self.link_loss_timeout = float(rospy.get_param('/wifi_link_monitor/lost_timeout', 4.))
         for name in self.profile_names:
             with self.tx_lock:
                 self.master.mav.param_request_read_send(self.master.target_system,
@@ -77,7 +134,9 @@ class FlightHomingAdapter(object):
                 and all(abs(values[k]-v) < 1e-5 for k, v in exact.items())
                 and int(values['COM_DLL_EXCEPT']) & 4 == 4
                 and int(values['COM_RCL_EXCEPT']) & 6 == 6
-                and .1 <= values['COM_OF_LOSS_T'] <= 1.)
+                and .1 <= values['COM_OF_LOSS_T'] <= 1.
+                and values['COM_DL_LOSS_T'] >= self.link_loss_timeout+1.2+3.+1.
+                and values['COM_FAIL_ACT_T'] >= 0.)
 
     def flight_heartbeat(self, msg):
         self.px4_mode = ((msg.custom_mode >> 16) & 255, (msg.custom_mode >> 24) & 255)
@@ -86,11 +145,13 @@ class FlightHomingAdapter(object):
                                                  getattr(mavutil.mavlink, 'MAV_STATE_FLIGHT_TERMINATION', 8))
 
     def estimator_healthy(self, now):
-        # ATTITUDE, POS_HORIZ_REL, POS_VERT_ABS; reject constant-position mode.
-        required = 1 | 8 | 32
+        # PX4 1.16 sets legacy bit 128 also for a healthy stationary vehicle.
+        # Require actual local position/velocity and active horizontal aiding;
+        # use direct uORB health for control instead of treating rest as failure.
+        required = 1 | 2 | 4 | 8 | 32 | 256
         return (self.estimator_received is not None and 0 <= now-self.estimator_received < 1.
                 and self.estimator_flags & required == required
-                and not self.estimator_flags & 128)
+                and not self.estimator_flags & 2048)
 
     def flight_telemetry_received(self, msg):
         with self.control_lock:
@@ -125,6 +186,19 @@ class FlightHomingAdapter(object):
                 stamp = self.px4_time_to_ros(msg.time_usec).to_sec()
                 if not 0 <= now-stamp <= .5:
                     return
+                if self.last_odometry_reset is not None and int(msg.reset_counter) != self.last_odometry_reset:
+                    if (self.px4_armed is True and self.transport.state == 'NORMAL'
+                            and not self.flight.owned and self.last_vins_health == 'ACTIVE'):
+                        # PX4 can complete magnetic yaw alignment after takeoff.
+                        # VIO frame is unchanged: re-register only before return,
+                        # with fresh direct health and a new stable sample window.
+                        self.alignment = Alignment()
+                        self.transport.alignment_valid = False
+                        self.ekf_realign_pending = True
+                        self.readiness_since = None
+                    else:
+                        self.new_navigation_epoch('PX4_ESTIMATOR_RESET')
+                self.last_odometry_reset = int(msg.reset_counter)
                 self.px4_pose = (stamp, p, q, int(msg.reset_counter))
                 self.px4_pose_received = now
                 out = Odometry()
@@ -154,12 +228,19 @@ class FlightHomingAdapter(object):
         closest = min(self.local_poses, key=lambda p: abs(p[0]-self.px4_pose[0]))
         if abs(closest[0]-self.px4_pose[0]) > .12:
             return
-        self.alignment.observe(closest, self.px4_pose, self.px4_armed is False)
+        registration_allowed = self.px4_armed is False or (
+            self.ekf_realign_pending and self.transport.state == 'NORMAL'
+            and not self.flight.owned and self.health_probe.ready(now)
+            and self.last_vins_health == 'ACTIVE')
+        self.alignment.observe(closest, self.px4_pose, registration_allowed)
         self.transport.alignment_valid = self.alignment.valid
         if self.alignment.valid:
             self.transport.alignment = self.alignment.transform
+            self.ekf_realign_pending = False
 
     def flight_disconnected(self):
+        self.health_probe = Px4Health()
+        self.readiness_since = None
         self.px4_pose = None
         self.px4_pose_received = None
         self.estimator_received = None
@@ -174,7 +255,23 @@ class FlightHomingAdapter(object):
 
     def flight_status(self):
         transform = self.transport.alignment
-        return dict(execution_mode=self.execution_mode, control_profile_ready=self.profile_ready(),
+        now = rospy.get_time()
+        ready = (self.estimator_healthy(now) and self.health_probe.ready(now, require_heading=False)
+                 and self.transport.alignment_valid and self.transport.odom_fresh(now)
+                 and self.px4_pose is not None and 0 <= now-self.px4_pose[0] < .5
+                 and self.profile_ready() and self.get_clock_offset_ns() is not None)
+        if ready:
+            if self.readiness_since is None:
+                self.readiness_since = now
+        else:
+            self.readiness_since = None
+        return dict(navigation_epoch=self.navigation_epoch,
+                    ground_navigation_ready=bool(ready and now-self.readiness_since >= 3.),
+                    return_ready=bool(ready and now-self.readiness_since >= 3. and self.health_probe.ready(now)),
+                    px4_health=self.health_probe.values,
+                    px4_health_fresh=self.health_probe.fresh(now),
+                    px4_health_reason=self.health_probe.reason,
+                    execution_mode=self.execution_mode, control_profile_ready=self.profile_ready(),
                     control_profile_values=self.profile_values, control_phase=self.flight.phase,
                     control_reason=self.flight.reason, mode=self.px4_mode,
                     landed_state=self.landed_state, estimator_flags=self.estimator_flags,
@@ -225,25 +322,35 @@ class FlightHomingAdapter(object):
             if alive and time.time()-self.profile_requested > 10.:
                 self.request_control_profile()
             profile_ok = self.profile_ready()
-            if not profile_ok and not self.flight.owned and self.flight.phase not in ('REQUEST_OFFBOARD', 'REQUEST_LAND', 'RELEASING'):
+            if (not profile_ok and self.transport.state != 'ABORT' and not self.flight.owned
+                    and self.flight.phase not in ('REQUEST_OFFBOARD', 'REQUEST_LAND', 'RELEASING')):
                 self.flight.reason = 'BLOCKED_PX4_PROFILE_NOT_CONFIRMED'
-                return
             nav = (self.estimator_healthy(now) and self.px4_pose is not None
                    and 0 <= now-self.px4_pose[0] <= .5)
             state_fresh = self.transport.fresh(self.transport.state_time, now, .5)
-            healthy = (profile_ok and nav and self.transport.alignment_valid and self.transport.odom_fresh(now)
+            healthy = (profile_ok and nav and self.health_probe.ready(now) and self.transport.alignment_valid and self.transport.odom_fresh(now)
                        and self.get_clock_offset_ns() is not None and state_fresh)
+            if self.flight.phase == 'IDLE' and (self.readiness_since is None or now-self.readiness_since < 3.):
+                healthy = False
             target = self.transport.next_setpoint(now, alive, self.get_clock_offset_ns() is not None)
             airborne = (self.landed_state == 2 and self.landed_received is not None
                         and 0 <= now-self.landed_received < 2.)
             if not self.transport.enabled:
                 return
+            requested = self.transport.state in ('RETURN', 'WAIT_LINK')
+            if requested and not healthy and self.flight.phase == 'IDLE' and airborne and self.px4_armed is True:
+                if self.return_blocked_since is None:
+                    self.return_blocked_since = now
+            else:
+                self.return_blocked_since = None
+            takeover_expired = self.return_blocked_since is not None and now-self.return_blocked_since >= 3.
             point, command = self.flight.step(
                 now, self.transport.session, self.px4_armed is True, airborne, alive,
                 self.px4_mode, self.transport.state in ('RETURN', 'WAIT_LINK'),
                 self.transport.state == 'NORMAL' and state_fresh,
-                self.transport.state == 'LAND' and self.transport.eligible_land,
-                healthy and (target is not None or self.transport.state in ('LAND', 'NORMAL')),
+                state_fresh and self.transport.session is not None and (takeover_expired or
+                    (self.transport.state == 'LAND' and self.transport.eligible_land) or self.transport.state == 'ABORT'),
+                healthy and (target is not None or self.transport.state in ('LAND', 'ABORT', 'NORMAL')),
                 self.px4_pose[1] if nav else None, target, self.px4_critical)
             if point is not None and time.time()-self.last_setpoint_send >= .05:
                 self.send_flight_position(point)

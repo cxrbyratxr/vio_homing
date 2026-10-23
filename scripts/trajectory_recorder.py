@@ -35,6 +35,7 @@ class TrajectoryRecorder(object):
         self.lock = threading.Lock()
         self.points = []
         self.frame_id = "local_frd"
+        self.navigation_epoch = None
         self.link_state = "WAITING"
         self.last_good_index = None
         self.last_good_pose = None
@@ -76,6 +77,8 @@ class TrajectoryRecorder(object):
             queue_size=20
         )
 
+        self.epoch_sub = rospy.Subscriber('/vio_homing/navigation_epoch', String, self.on_epoch, queue_size=1)
+
         if self.path_publish_rate > 0:
             self.publish_timer = rospy.Timer(
                 rospy.Duration(1.0 / self.path_publish_rate),
@@ -92,6 +95,17 @@ class TrajectoryRecorder(object):
             self.min_point_distance,
             self.max_point_interval,
         )
+
+    def on_epoch(self, msg):
+        with self.lock:
+            if self.navigation_epoch == msg.data:
+                return
+            self.navigation_epoch = msg.data
+            self.points = []
+            self.last_good_index = self.last_good_pose = self.last_record_time = None
+            self.reset_return_state()
+            self.last_good_pose_pub.publish(PoseStamped())
+            rospy.logwarn('Recorder cleared for new navigation epoch')
 
     def pose_from_odometry(self, msg):
         pose = PoseStamped()
@@ -146,7 +160,10 @@ class TrajectoryRecorder(object):
                 self.last_good_index -= 1
 
                 if self.last_good_index < 0:
-                    self.last_good_index = 0
+                    self.last_good_index = None
+                    self.last_good_pose = None
+                    self.reset_return_state()
+                    self.last_good_pose_pub.publish(PoseStamped())
 
     def record_pose(self, pose):
         self.points.append(pose)
@@ -166,7 +183,11 @@ class TrajectoryRecorder(object):
 
     def odom_callback(self, msg):
         pose = self.pose_from_odometry(msg)
-
+        age = (rospy.Time.now()-msg.header.stamp).to_sec()
+        p = msg.pose.pose.position
+        if (msg.header.frame_id != 'local_frd' or not 0 <= age <= 1.
+                or any(math.isnan(v) or math.isinf(v) for v in (p.x, p.y, p.z))):
+            return
         with self.lock:
             self.odom_count += 1
 

@@ -22,6 +22,10 @@
   </node>
   <node pkg="vio_homing" type="homing_manager.py" name="homing_manager" output="screen" respawn="false">
     <param name="odom_topic" value="$(arg odom_topic)" />
+    <param name="arrival_dwell" value="0.5" />
+    <param name="arrival_speed" value="0.5" />
+    <param name="progress_timeout" value="15.0" />
+    <param name="waypoint_timeout" value="60.0" />
     <param name="arrival_radius" value="0.4" />
     <param name="wait_link_seconds" value="60.0" />
     <param name="odom_timeout" value="1.0" />
