@@ -16,7 +16,6 @@
   <depend>std_msgs</depend>
   <exec_depend>rosnode</exec_depend>
   <exec_depend>rosbag</exec_depend>
-  <exec_depend>web_video_server</exec_depend>
   <exec_depend>python-opencv</exec_depend>
   <exec_depend>python-yaml</exec_depend>
   <exec_depend>python-numpy</exec_depend>

@@ -5,10 +5,6 @@ package_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$HOME/catkin_ws/src/vio_homing"
 expected="$(cat "$package_dir/VERSION")"
 [[ "$expected" =~ ^[0-9a-f]{40}$ ]] || exit 1
-if systemctl is-active --quiet vio-homing.service; then
-    printf '%s\n' 'Stop vio-homing.service and manual ROS/camera/video processes first.' >&2
-    exit 1
-fi
 if pgrep -f '([r]oslaunch|[r]osmaster|[u]sb_camera_node.py|[w]eb_video_server|[m]avlink_imu_bridge.py)' >/dev/null; then
     printf '%s\n' 'Old ROS/camera/video processes remain. Stop them before updating.' >&2
     exit 1
@@ -21,7 +17,7 @@ backup_dir="$HOME/vio_backups/$(date +%Y%m%d_%H%M%S)_$$"
 mkdir -p "$backup_dir"
 tar -czf "$backup_dir/vio_homing_before_update.tgz" -C "$HOME/catkin_ws/src" vio_homing
 if [ -n "$(git status --porcelain)" ]; then
-    git stash push -u -m "preserved before wireless update $backup_dir"
+    git stash push -u -m "preserved before manual stack update $backup_dir"
 fi
 git fetch "$package_dir/vio_homing_update.bundle" refs/heads/integrate/jetson-github
 [ "$(git rev-parse FETCH_HEAD)" = "$expected" ]
@@ -38,4 +34,4 @@ catkin_make -j1
 set -u
 printf '\nUpdated: %s\nBackup: %s\n' "$expected" "$backup_dir"
 printf '%s\n' 'Build completed. No service or PX4 parameters changed.'
-printf '%s\n' 'Start: ~/catkin_ws/src/vio_homing/scripts/run_wireless.sh'
+printf '%s\n' 'Start: see MANUAL_START.md; run scripts/manual/01_master.sh through 05_vins.sh in separate terminals.'

@@ -33,7 +33,7 @@ class FlightHomingAdapter(object):
         self.last_flight_phase = None
         self.profile_values = {}
         self.profile_times = {}
-        self.profile_names = ['EKF2_EN', 'EKF2_EV_CTRL', 'EKF2_HGT_REF', 'EKF2_EV_NOISE_MD',
+        self.profile_names = ['EKF2_EN', 'EKF2_EV_CTRL', 'EKF2_HGT_REF', 'EKF2_EV_NOISE_MD', 'EKF2_BARO_CTRL',
                               'COM_DLL_EXCEPT', 'COM_RCL_EXCEPT', 'NAV_DLL_ACT',
                               'COM_OBL_RC_ACT', 'COM_OF_LOSS_T']
         self.profile_requested = 0.
@@ -70,7 +70,7 @@ class FlightHomingAdapter(object):
 
     def profile_ready(self):
         values = self.profile_values
-        exact = {'EKF2_EN': 1, 'EKF2_EV_CTRL': 7, 'EKF2_HGT_REF': 3,
+        exact = {'EKF2_EN': 1, 'EKF2_EV_CTRL': 7, 'EKF2_HGT_REF': 0, 'EKF2_BARO_CTRL': 1,
                  'EKF2_EV_NOISE_MD': 1, 'NAV_DLL_ACT': 3, 'COM_OBL_RC_ACT': 4}
         return (all(name in values for name in self.profile_names)
                 and all(0 <= time.time()-self.profile_times.get(k, 0) < 30. for k in self.profile_names)

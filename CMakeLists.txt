@@ -34,12 +34,9 @@ catkin_install_python(
     scripts/check_camera_timing.py
     scripts/vins_odometry_adapter.py
     scripts/vins_displacement.py
+    scripts/set_bench_origin.py
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(PROGRAMS scripts/run_wireless.sh
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(DIRECTORY launch/
@@ -48,4 +45,9 @@ install(DIRECTORY launch/
 
 install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+)
+
+install(DIRECTORY scripts/manual/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts/manual
+  USE_SOURCE_PERMISSIONS
 )

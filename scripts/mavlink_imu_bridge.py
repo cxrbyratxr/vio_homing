@@ -7,13 +7,14 @@ os.environ["MAVLINK20"] = "1"
 
 import time
 import math
+import json
 import threading
 from collections import deque
 
 import rospy
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String
 from vio_homing.qgc_link import QgcLink
 from pymavlink import mavutil
 from vio_homing.mavlink_homing_adapter import MavlinkHomingAdapter
@@ -71,13 +72,42 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         self.last_odom_rx_count = 0
         self.last_odom_tx_count = 0
 
+        self.imu_fault = None
+        self.last_imu_usec = None
+        self.imu_ready = False
+        self.imu_status = rospy.Publisher('/vio_homing/imu_status', String, queue_size=1, latch=True)
+        self.imu_status.publish('WAITING_FOR_SYNC')
         self.imu_pub = rospy.Publisher(self.imu_topic, Imu, queue_size=200)
 
         self.init_homing_adapter()
+        self.known_global_origin = None
+        self.origin_pub = rospy.Publisher('/vio_homing/global_origin_response', String, queue_size=5)
+        self.origin_sub = rospy.Subscriber('/vio_homing/global_origin_request', String,
+                                           self.set_global_origin, queue_size=1)
 
         self.odom_sub = rospy.Subscriber(
             self.odom_topic, Odometry, self.odom_callback, queue_size=50
         )
+
+    def set_global_origin(self, msg):
+        try:
+            values = json.loads(msg.data)
+            lat, lon, alt = [values[k] for k in ('latitude', 'longitude', 'altitude')]
+            if any(isinstance(v, bool) or not isinstance(v, (int, long)) for v in (lat, lon, alt)):
+                raise ValueError('Origin requires integer degE7/degE7/mm MSL')
+            if not (-900000000 <= lat <= 900000000 and -1800000000 <= lon <= 1800000000 and -1000000 <= alt <= 10000000):
+                raise ValueError('Invalid origin range')
+            with self.control_lock:
+                if not self.mavlink_alive() or self.px4_armed is not False or self.landed_state != 1:
+                    raise ValueError('Origin requires live disarmed PX4 on ground')
+                if self.known_global_origin is not None and self.known_global_origin != (lat, lon, alt):
+                    raise ValueError('Refusing to replace an already observed different EKF origin')
+                with self.tx_lock:
+                    self.master.mav.set_gps_global_origin_send(self.master.target_system, lat, lon, alt)
+                    self.master.mav.command_long_send(self.master.target_system,
+                        self.master.target_component, 512, 0, 49, 0, 0, 0, 0, 0, 0)
+        except (KeyError, TypeError, ValueError) as error:
+            self.origin_pub.publish(String(data=json.dumps(dict(error=str(error)))))
 
     def reset_timesync(self):
         with self.timesync_lock:
@@ -242,7 +272,25 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
 
         return px4_time_ns // 1000
 
+    def invalidate_imu(self, reason):
+        if self.imu_fault is None:
+            self.imu_fault = reason
+            self.imu_status.publish('FAULT: ' + reason)
+            rospy.logerr('IMU session invalid: %s. Restart entire stack and initialize VINS again.', reason)
+
     def publish_imu(self, msg):
+        stamp = int(msg.time_usec)
+        if self.last_imu_usec is not None:
+            gap = stamp - self.last_imu_usec
+            if gap <= 0 or gap > 500000:
+                self.invalidate_imu('PX4 IMU clock reset or gap > 0.5 s')
+        self.last_imu_usec = stamp
+        # Never mix arrival-time stamps with synchronized sensor-time stamps.
+        if self.imu_fault is not None or self.get_clock_offset_ns() is None:
+            return
+        if not self.imu_ready:
+            self.imu_status.publish('READY')
+            self.imu_ready = True
         imu = Imu()
         imu.header.stamp = self.px4_time_to_ros(msg.time_usec)
         imu.header.frame_id = self.imu_frame_id
@@ -292,7 +340,7 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
         self.odom_rx_count += 1
         self.homing_odom_received(msg)
 
-        if self.master is None:
+        if self.master is None or self.imu_fault is not None:
             return
 
         time_usec = self.ros_time_to_px4_usec(msg.header.stamp)
@@ -431,6 +479,11 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
             if self.qgc_link is not None:
                 self.qgc_link.forward(msg)
 
+            if msg_type == 'GPS_GLOBAL_ORIGIN' and msg.get_srcSystem() == self.master.target_system and msg.get_srcComponent() == self.master.target_component:
+                self.known_global_origin = (msg.latitude, msg.longitude, msg.altitude)
+                self.origin_pub.publish(String(data=json.dumps(dict(latitude=msg.latitude,
+                    longitude=msg.longitude, altitude=msg.altitude))))
+
             if msg_type == "TIMESYNC":
                 self.process_timesync(msg)
 
@@ -470,10 +523,15 @@ def main():
         except Exception as error:
             rospy.logerr("MAVLink bridge error: %s", str(error))
 
+            if bridge.last_imu_usec is not None:
+                bridge.invalidate_imu('MAVLink connection interrupted')
             bridge.close()
             if rospy.is_shutdown():
                 break
 
+            if not rospy.get_param('~auto_reconnect', False):
+                rospy.logerr('Automatic reconnect disabled; restart manually after restoring PX4.')
+                break
             rospy.loginfo("Retrying MAVLink connection in 3 seconds...")
 
             time.sleep(3)

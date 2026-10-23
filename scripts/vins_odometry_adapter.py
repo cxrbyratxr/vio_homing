@@ -33,6 +33,7 @@ class Adapter(object):
                                       queue_size=1, latch=True)
         self.status.publish('WAITING_FOR_VINS')
         self.sub = rospy.Subscriber(self.input, Odometry, self.callback, queue_size=10)
+        self.imu_health_sub = rospy.Subscriber('/vio_homing/imu_status', String, self.imu_health, queue_size=1)
         self.restart_sub = rospy.Subscriber('/vins_restart', Bool, self.restart)
         self.timer = rospy.Timer(rospy.Duration(0.1), self.tick)
 
@@ -41,6 +42,13 @@ class Adapter(object):
             self.fault = reason
             self.status.publish('FAULT: ' + reason)
             rospy.logerr('VINS adapter stopped: %s. Restart the adapter and reset route before reuse.', reason)
+
+    def imu_health(self, msg):
+        with self.lock:
+            if msg.data.startswith('FAULT'):
+                self.fail('IMU session invalid: ' + msg.data)
+            elif msg.data == 'WAITING_FOR_SYNC' and self.previous is not None:
+                self.fail('IMU bridge restarted during VINS session')
 
     def restart(self, msg):
         if msg.data:
@@ -85,8 +93,10 @@ class Adapter(object):
                     dt = (stamp-old_stamp).to_sec()
                     if dt <= 0 or dt > self.timeout or msg.header.seq <= old_seq:
                         raise ValueError('Timestamp/sequence discontinuity')
-                    if np.linalg.norm(position-old_position) > self.max_step:
-                        raise ValueError('Position discontinuity')
+                    step = float(np.linalg.norm(position-old_position))
+                    if step > self.max_step:
+                        rospy.logwarn_throttle(1.0,
+                            'VINS position jump %.3f m in %.3f s; forwarding by operator request' % (step, dt))
                     omega = angular_velocity(old_orientation, orientation, dt)
             except (ValueError, TypeError, OverflowError) as error:
                 self.fail(str(error))

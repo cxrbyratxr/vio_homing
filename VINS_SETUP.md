@@ -24,18 +24,12 @@ Requires the already built ROS package `vins` in the catkin workspace.
 
 ## Live start on Jetson
 
-The wireless service now starts camera, UART, VINS and adapter together:
-
-```bash
-sudo systemctl restart vio-wireless.service
-```
-
-Do not start another vins.launch or adapter alongside that service. Move the
-rigid camera/IMU assembly gently before a textured scene for initialization.
-The current autonomous control integration is documented in AUTONOMOUS_HOMING.md.
-For a standalone estimator, first stop the service and supply camera/IMU topics
-on an isolated ROS master. The standalone vins.launch default still leaves the
-adapter disabled.
+Use scripts/manual/01_master.sh, 02_px4.sh, 04_camera.sh and 05_vins.sh
+in separate terminals, as documented in MANUAL_START.md. No service or automatic
+respawn is installed. For the homing scenario add 03_logic.sh.
+Move the rigid camera/IMU assembly before a textured scene for initialization.
+05_vins.sh explicitly enables the adapter; standalone vins.launch keeps it opt-in.
+A reset requires a fresh route/alignment session, not only a VINS restart.
 
 Outputs advertised by the actual installed visualization.cpp:
 - /vins_estimator/odometry: nav_msgs/Odometry (optimized IMU pose)
@@ -48,7 +42,7 @@ interface accordingly; it needs a separate audited adapter before publishing
 /vio/odom_frd. World is gravity aligned with arbitrary yaw; it is not a
 geographically north-aligned frame. Do not merely rename a topic or frame.
 The adapter connects this raw output to /vio/odom_frd for MAVLink, homing_manager
-and trajectory_recorder in the wireless service.
+and trajectory_recorder in the manually launched stack.
 
 ## Isolated bag evaluation (separate ROS master)
 
@@ -141,5 +135,5 @@ homing states NORMAL -> LINK_LOST -> RETURN. Adapter remained ACTIVE.
 The first pose is deliberately withheld to establish angular-rate history.
 Evidence: verification/vins_adapter/. Test nodes stopped afterward. At that earlier verification point the live
 wireless stack had enable_homing_commands=false and no live VINS/adapter.
-The subsequent control integration enables both in wireless.launch.
+The manual 05_vins.sh launcher explicitly enables the adapter.
 These checks validate interfaces, not scale, drift, accuracy or flight readiness.

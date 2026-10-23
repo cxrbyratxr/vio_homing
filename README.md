@@ -2,17 +2,12 @@
 
 ROS Melodic / Python 2.7, Jetson Nano, Pixhawk 6C Mini (PX4 1.16.0).
 
-## Запуск
+## Ручной запуск
 
-```bash
-sudo systemctl restart vio-wireless.service
-journalctl -u vio-wireless.service -f -n 30 -o cat
-```
-
-Сервис запускает камеру, MAVLink/IMU/QGC, VINS, адаптер одометрии,
-trajectory_recorder, homing_manager и браузерное видео. Не запускайте второй
-экземпляр этих узлов вручную. После сброса VINS нужна новая сессия всего стека,
-чтобы старый маршрут не остался в другой системе координат.
+Автозапуск отключён. См. [MANUAL_START.md](MANUAL_START.md).
+Пять скриптов в `scripts/manual/` запускаются в отдельных терминалах.
+Браузерное видео, панель и старые средства автозапуска удалены.
+В шестом терминале origin задаётся явно; команды в MANUAL_START.md.
 
 ## Наблюдение по SSH
 
@@ -35,18 +30,16 @@ rostopic echo -n 1 /vio_homing/mavlink_transport_status
 
 - `scripts/`: рабочие ROS узлы, индикатор перемещения, проверки IMU/камеры.
 - `src/vio_homing/`: координаты, контроль данных, логика возврата и MAVLink.
-- `launch/`: companion, wireless, VINS, адаптер, камера и запись camera–IMU.
+- `launch/`: отдельные PX4, логика, камера, VINS/адаптер и запись camera–IMU.
 - `config/`: параметры VINS/камеры, справочный профиль PX4.
-- `systemd/`: сервис и установка автозапуска.
 
 ## Интерфейсы
 
 | Назначение | Значение |
 |---|---|
 | Jetson AP/SSH | 192.168.50.1 |
-| Mac / QGC | 192.168.50.24, UDP 14550; при смене адреса обновить peer |
+| Mac / QGC | 192.168.50.213 (текущий), UDP 14550; при смене адреса обновить peer |
 | Приём QGC на Jetson | UDP 14555 |
-| Видео | http://192.168.50.1:8080/stream?topic=/camera/image_raw |
 | UART | Jetson /dev/ttyTHS1 → PX4 /dev/ttyS3, 460800 |
 | IMU | /pixhawk/imu, около 200 Гц |
 | Камера | /camera/image_raw, 640×480 YUYV, около 30 Гц |

@@ -879,3 +879,21 @@ Live integration caveat: 168 ODOMETRY packets sent without TX errors, then VINS
 position discontinuity latched adapter FAULT. Automatic NED alignment did not
 complete; sustained EV fusion and armed control are NOT verified. Keep fault
 visible; do not bypass max_step or freshness checks to obtain an alignment.
+
+## 2026-10-23 — ручной запуск, очистка и стендовый origin
+
+Предыдущие разделы — история; актуальный порядок в MANUAL_START.md.
+Удалены systemd templates/installer, run_wireless.sh, общие companion/wireless/
+qgc_wifi launch, панель и запуск браузерного видео. Взамен scripts/manual/01–05.
+ROS master явный; дубликаты проверяются, respawn и MAVLink auto-reconnect по
+умолчанию отключены. AP/SSH остаются сетевыми службами ОС.
+В шестом терминале set_bench_origin.py задаёт условную привязку МАИ 4к3;
+PX4 подтвердил её через ref_lat/ref_lon/ref_alt, xy_global/z_global.
+Механизм не посылает GPS/HIL_GPS, не ARMит и не переключает режимы.
+
+Перенесено g_norm=9.807 из фактического конфига Jetson. Добавлена блокировка
+сессии при разрыве IMU/сбросе её времени; до сходимости TIMESYNC нет IMU.
+Скачок VINS >1 м по просьбе владельца переведён в предупреждение, остальные
+проверки сохранены. Имелись реальные срывы VINS и отказы EKF2; результат
+текущего порядка запуска сообщил владелец. Это не доказательство устойчивости
+VIO, выполнения полётных команд или готовности к полёту.

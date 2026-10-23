@@ -2,7 +2,8 @@
 # Apply via the guarded maintenance script; retain a before/after backup.
 1 1 EKF2_EN 1 6
 1 1 EKF2_EV_CTRL 7 6
-1 1 EKF2_HGT_REF 3 6
+1 1 EKF2_HGT_REF 0 6
+1 1 EKF2_BARO_CTRL 1 6
 1 1 EKF2_EV_NOISE_MD 1 6
 1 1 EKF2_EVP_NOISE 0.2 9
 1 1 EKF2_EVV_NOISE 0.2 9
