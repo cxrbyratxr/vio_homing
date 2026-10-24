@@ -16,9 +16,7 @@ from vio_homing.flight_control import FlightControl, OFFBOARD, HOLD
 
 class FlightHomingAdapter(object):
     def init_flight_control(self):
-        self.execution_mode = rospy.get_param('~homing_execution_mode', 'bench')
-        if self.execution_mode not in ('bench', 'flight'):
-            raise ValueError('homing_execution_mode must be bench or flight')
+        self.execution_mode = 'flight'
         self.auto_alignment = bool(rospy.get_param('~auto_frd_alignment', False))
         self.alignment = Alignment()
         self.ekf_realign_pending = False
@@ -98,7 +96,7 @@ class FlightHomingAdapter(object):
                 probe.finish(now, lambda usec: self.px4_time_to_ros(usec).to_sec(), now)
                 with self.tx_lock:
                     self.master.mav.serial_control_send(10, 0, 0, 0, 0, [0]*70)
-        elif now-probe.last_query >= 1.5 and self.console_pending is None:
+        elif now-probe.last_query >= 1.5:
             data = bytearray(probe.COMMAND.encode('ascii'))
             probe.begin(now)
             with self.tx_lock:
@@ -106,10 +104,9 @@ class FlightHomingAdapter(object):
                     len(data), list(data)+[0]*(70-len(data)))
 
     def request_flight_telemetry(self):
-        # Map telemetry is needed in bench mode too, independently of control.
+        # Map telemetry and navigation feedback share the existing connection.
         streams = [(33, 5), (49, 1), (242, 1), (30, 20), (74, 5), (245, 2)]
-        if self.execution_mode == 'flight' or self.auto_alignment:
-            streams += [(331, 10), (230, 5)]
+        streams += [(331, 10), (230, 5)]
         for message, hz in streams:
             with self.tx_lock:
                 self.master.mav.command_long_send(
@@ -367,4 +364,3 @@ class FlightHomingAdapter(object):
             if self.flight.phase != self.last_flight_phase:
                 rospy.logwarn('Homing control: %s (%s)', self.flight.phase, self.flight.reason)
                 self.last_flight_phase = self.flight.phase
-            self.poll_console()

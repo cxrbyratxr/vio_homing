@@ -1,6 +1,6 @@
 %YAML:1.0
 ---
-# Preliminary 640x480 calibration. See VINS_SETUP.md before use.
+# Preliminary 640x480 calibration. See README.md before use.
 imu: 1
 num_of_cam: 1
 imu_topic: "/pixhawk/imu"

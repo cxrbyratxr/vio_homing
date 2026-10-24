@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import socket
 import time
+import math
 
 import rospy
 
@@ -15,20 +15,10 @@ from std_msgs.msg import Float32
 class WifiLinkMonitor(object):
 
     def __init__(self):
-        self.source = rospy.get_param("~source", "udp")
-        if self.source not in ("udp", "qgc"):
-            raise ValueError("Link source must be udp or qgc")
-        self.bind_address = rospy.get_param("~bind_address", "0.0.0.0")
-        self.port = int(rospy.get_param("~port", 15050))
-        self.ok_timeout = float(rospy.get_param("~ok_timeout", 0.5))
-        self.lost_timeout = float(rospy.get_param("~lost_timeout", 3.0))
+        self.ok_timeout = float(rospy.get_param("~ok_timeout", 2.0))
+        self.lost_timeout = float(rospy.get_param("~lost_timeout", 4.0))
         self.publish_rate = float(rospy.get_param("~publish_rate", 20.0))
-        self.expected_prefix = rospy.get_param(
-            "~heartbeat_prefix", "VIO_HOMING_HEARTBEAT"
-        )
-
         self.last_packet_time = None
-        self.last_sender = None
         self.packet_count = 0
         self.current_state = "WAITING"
         self.previous_state = None
@@ -46,17 +36,13 @@ class WifiLinkMonitor(object):
             "/vio_homing/link_packet_count", Float32, queue_size=10
         )
 
-        self.sock = None
-        if self.source == "qgc":
-            self.qgc_sub = rospy.Subscriber(
-                "/vio_homing/qgc_heartbeat", Empty,
-                self.qgc_heartbeat, queue_size=10)
-        else:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind((self.bind_address, self.port))
-            self.sock.setblocking(False)
-        rospy.loginfo("WiFi link monitor source: %s", self.source)
+        self.qgc_sub = rospy.Subscriber(
+            "/vio_homing/qgc_heartbeat", Empty, self.qgc_heartbeat, queue_size=10)
+        if (not all(not math.isnan(v) and not math.isinf(v) for v in
+                    (self.ok_timeout, self.lost_timeout, self.publish_rate))
+                or not 0 < self.ok_timeout < self.lost_timeout or self.publish_rate <= 0):
+            raise ValueError('Require 0 < ok_timeout < lost_timeout and positive publish_rate')
+        rospy.loginfo("WiFi link monitor source: QGC heartbeat")
         rospy.loginfo(
             "LINK_OK < %.2f s, LINK_LOST >= %.2f s", self.ok_timeout,
             self.lost_timeout
@@ -65,28 +51,6 @@ class WifiLinkMonitor(object):
     def qgc_heartbeat(self, unused):
         self.last_packet_time = time.time()
         self.packet_count += 1
-
-    def receive_packets(self):
-        if self.sock is None:
-            return
-        while True:
-            try:
-                data, address = self.sock.recvfrom(1024)
-            except socket.error:
-                break
-
-            if not data:
-                continue
-            try:
-                text = data.decode("utf-8")
-            except Exception:
-                continue
-            if not text.startswith(self.expected_prefix):
-                continue
-
-            self.last_packet_time = time.time()
-            self.last_sender = address
-            self.packet_count += 1
 
     def calculate_state(self):
         if self.last_packet_time is None:
@@ -128,8 +92,6 @@ class WifiLinkMonitor(object):
     def run(self):
         rate = rospy.Rate(self.publish_rate)
         while not rospy.is_shutdown():
-            self.receive_packets()
-
             state, alive, age = self.calculate_state()
             self.current_state = state
             self.log_transition(state, age)
@@ -137,20 +99,11 @@ class WifiLinkMonitor(object):
 
             rate.sleep()
 
-    def close(self):
-        try:
-            self.sock.close()
-        except Exception:
-            pass
-
 
 def main():
     rospy.init_node("wifi_link_monitor")
     monitor = WifiLinkMonitor()
-    try:
-        monitor.run()
-    finally:
-        monitor.close()
+    monitor.run()
 
 
 if __name__ == "__main__":

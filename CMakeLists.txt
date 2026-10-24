@@ -26,15 +26,13 @@ catkin_package(
 catkin_install_python(
   PROGRAMS
     scripts/mavlink_imu_bridge.py
-    scripts/check_imu_timing.py
     scripts/wifi_link_monitor.py
     scripts/trajectory_recorder.py
     scripts/homing_manager.py
     scripts/usb_camera_node.py
-    scripts/check_camera_timing.py
     scripts/vins_odometry_adapter.py
     scripts/vins_displacement.py
-    scripts/set_bench_origin.py
+    scripts/set_map_origin.py
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

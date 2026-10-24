@@ -1,0 +1,41 @@
+<launch>
+  <arg name="odom_topic" default="/vio/odom_frd" />
+  <arg name="camera_device" default="/dev/v4l/by-id/usb-Global_Shutter_Camera_Global_Shutter_Camera_01.00.00-video-index0" />
+  <arg name="camera_width" default="640" />
+  <arg name="camera_height" default="480" />
+  <arg name="camera_fps" default="30" />
+  <arg name="camera_fourcc" default="YUYV" />
+  <arg name="camera_grayscale" default="false" />
+  <arg name="camera_info_file" default="" />
+  <arg name="adapter_stamp_offset" default="-0.03275171186939631" />
+  <arg name="config" default="$(find vio_homing)/config/vins/usbgs1200p01_mono_imu.yaml" />
+  <arg name="image_topic" default="/camera/image_raw" />
+  <arg name="imu_topic" default="/pixhawk/imu" />
+  <node pkg="vio_homing" type="usb_camera_node.py" name="usb_camera" output="screen" required="true">
+    <param name="device" value="$(arg camera_device)" />
+    <param name="width" value="$(arg camera_width)" />
+    <param name="height" value="$(arg camera_height)" />
+    <param name="fps" value="$(arg camera_fps)" />
+    <param name="fourcc" value="$(arg camera_fourcc)" />
+    <param name="grayscale" value="$(arg camera_grayscale)" />
+    <param name="frame_id" value="camera_optical_frame" />
+    <param name="image_topic" value="$(arg image_topic)" />
+    <param name="camera_info_topic" value="/camera/camera_info" />
+    <param name="camera_info_file" value="$(arg camera_info_file)" />
+  </node>
+  <node pkg="vins" type="vins_node" name="vins_estimator" args="$(arg config)" output="screen" required="true">
+    <remap from="/camera/image_raw" to="$(arg image_topic)" />
+    <remap from="/pixhawk/imu" to="$(arg imu_topic)" />
+    <env name="OMP_NUM_THREADS" value="1" />
+    <env name="OPENBLAS_NUM_THREADS" value="1" />
+  </node>
+  <node pkg="vio_homing" type="vins_odometry_adapter.py" name="vins_odometry_adapter" output="screen" required="true">
+    <param name="input_topic" value="/vins_estimator/odometry" />
+    <param name="output_topic" value="$(arg odom_topic)" />
+    <param name="max_speed" value="5.0" />
+    <param name="max_acceleration" value="12.0" />
+    <param name="max_step" value="1.0" />
+    <param name="settle_seconds" value="3.0" />
+    <param name="stamp_offset" value="$(arg adapter_stamp_offset)" />
+  </node>
+</launch>

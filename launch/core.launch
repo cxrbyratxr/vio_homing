@@ -1,24 +1,26 @@
 <launch>
+  <arg name="enable_px4_health_probe" default="true" />
   <arg name="configure_map_origin" default="true" />
   <arg name="map_origin_config" default="$(find vio_homing)/config/map_origin.yaml" />
   <arg name="enable_qgc_link" default="false" />
   <arg name="qgc_bind_ip" default="192.168.50.1" />
-  <arg name="imu_rate_hz" default="0" />
+  <arg name="imu_rate_hz" default="200" />
   <arg name="qgc_peer_ip" default="" />
   <arg name="serial_port" default="/dev/ttyTHS1" />
-  <arg name="baudrate" default="115200" />
+  <arg name="baudrate" default="460800" />
   <arg name="imu_topic" default="/pixhawk/imu" />
   <arg name="imu_frame_id" default="imu_link" />
   <arg name="odom_topic" default="/vio/odom_frd" />
   <arg name="odom_quality" default="0" />
   <arg name="enable_homing_commands" default="false" />
-  <arg name="homing_execution_mode" default="bench" />
   <arg name="auto_frd_alignment" default="false" />
   <arg name="frd_to_ned_alignment_valid" default="false" />
   <arg name="frd_to_ned_yaw_deg" default="0.0" />
   <arg name="frd_origin_ned" default="[0.0, 0.0, 0.0]" />
-  <node pkg="vio_homing" type="mavlink_imu_bridge.py" name="mavlink_imu_bridge" output="screen" respawn="false">
-    <param name="enable_px4_health_probe" value="true" />
+  <arg name="link_ok_timeout" default="2.0" />
+  <arg name="link_lost_timeout" default="4.0" />
+  <node pkg="vio_homing" type="mavlink_imu_bridge.py" name="mavlink_imu_bridge" output="screen" required="true">
+    <param name="enable_px4_health_probe" value="$(arg enable_px4_health_probe)" />
     <param name="enable_qgc_link" value="$(arg enable_qgc_link)" />
     <param name="qgc_bind_ip" value="$(arg qgc_bind_ip)" />
     <param name="imu_rate_hz" value="$(arg imu_rate_hz)" />
@@ -30,7 +32,6 @@
     <param name="odom_topic" value="$(arg odom_topic)" />
     <param name="odom_quality" value="$(arg odom_quality)" />
     <param name="enable_homing_commands" value="$(arg enable_homing_commands)" />
-    <param name="homing_execution_mode" value="$(arg homing_execution_mode)" />
     <param name="auto_frd_alignment" value="$(arg auto_frd_alignment)" />
     <param name="frd_to_ned_alignment_valid" value="$(arg frd_to_ned_alignment_valid)" />
     <param name="frd_to_ned_yaw_deg" value="$(arg frd_to_ned_yaw_deg)" />
@@ -38,9 +39,31 @@
     <param name="timesync_rate" value="10.0" />
     <param name="max_timesync_rtt_ms" value="50.0" />
   </node>
-  <node if="$(arg configure_map_origin)" pkg="vio_homing" type="set_bench_origin.py"
-        name="configure_map_origin" output="screen" respawn="false">
+  <node if="$(arg configure_map_origin)" pkg="vio_homing" type="set_map_origin.py" name="configure_map_origin" output="screen" respawn="false">
     <rosparam command="load" file="$(arg map_origin_config)" />
     <param name="automatic" value="true" />
+  </node>
+  <node pkg="vio_homing" type="wifi_link_monitor.py" name="wifi_link_monitor" output="screen" required="true">
+    <param name="ok_timeout" value="$(arg link_ok_timeout)" />
+    <param name="lost_timeout" value="$(arg link_lost_timeout)" />
+    <param name="publish_rate" value="20.0" />
+  </node>
+  <node pkg="vio_homing" type="trajectory_recorder.py" name="trajectory_recorder" output="screen" required="true">
+    <param name="odom_topic" value="$(arg odom_topic)" />
+    <param name="link_state_topic" value="/vio_homing/link_state" />
+    <param name="min_point_distance" value="0.25" />
+    <param name="max_point_interval" value="1.0" />
+    <param name="max_points" value="20000" />
+    <param name="path_publish_rate" value="1.0" />
+  </node>
+  <node pkg="vio_homing" type="homing_manager.py" name="homing_manager" output="screen" required="true">
+    <param name="odom_topic" value="$(arg odom_topic)" />
+    <param name="arrival_dwell" value="0.5" />
+    <param name="arrival_speed" value="0.5" />
+    <param name="progress_timeout" value="15.0" />
+    <param name="waypoint_timeout" value="60.0" />
+    <param name="arrival_radius" value="0.4" />
+    <param name="wait_link_seconds" value="60.0" />
+    <param name="odom_timeout" value="1.0" />
   </node>
 </launch>

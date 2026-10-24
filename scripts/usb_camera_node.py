@@ -20,9 +20,9 @@ class UsbCameraNode(object):
         self.height = int(rospy.get_param("~height", 480))
         self.fps = float(rospy.get_param("~fps", 30.0))
         # MJPG / YUYV, "" = формат драйвера по умолчанию
-        self.fourcc = str(rospy.get_param("~fourcc", "MJPG"))
-        self.grayscale = bool(rospy.get_param("~grayscale", True))
-        self.frame_id = rospy.get_param("~frame_id", "camera_link")
+        self.fourcc = str(rospy.get_param("~fourcc", "YUYV"))
+        self.grayscale = bool(rospy.get_param("~grayscale", False))
+        self.frame_id = rospy.get_param("~frame_id", "camera_optical_frame")
         # Задержка между экспозицией и возвратом grab(), с
         self.time_offset = float(rospy.get_param("~time_offset", 0.0))
         self.reconnect_delay = float(rospy.get_param("~reconnect_delay", 2.0))

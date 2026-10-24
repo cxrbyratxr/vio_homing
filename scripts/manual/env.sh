@@ -14,8 +14,13 @@ import rosgraph
 try:
     nodes = rosgraph.Master('/manual_start_check').getSystemState()
 except Exception:
-    sys.exit('Start 01_master.sh first; ROS master is unavailable.')
+    sys.exit('Start 01_core.sh first; ROS master is unavailable.')
 active = set(n for group in nodes for topic, names in group for n in names)
+required = set(['/mavlink_imu_bridge', '/wifi_link_monitor',
+                '/trajectory_recorder', '/homing_manager'])
+missing = required - active
+if missing:
+    sys.exit('Core group is not ready: ' + ', '.join(sorted(missing)))
 conflicts = active.intersection(sys.argv[1:])
 if conflicts:
     sys.exit('Already running: ' + ', '.join(sorted(conflicts)))

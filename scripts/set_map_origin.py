@@ -11,10 +11,10 @@ from std_msgs.msg import String
 
 
 def main():
-    rospy.init_node('set_bench_origin', anonymous=True)
-    latitude = float(rospy.get_param('~latitude_deg', 56.098828))
-    longitude = float(rospy.get_param('~longitude_deg', 35.869226))
-    altitude = float(rospy.get_param('~altitude_msl_m', 153.0))
+    rospy.init_node('set_map_origin', anonymous=True)
+    latitude = float(rospy.get_param('~latitude_deg'))
+    longitude = float(rospy.get_param('~longitude_deg'))
+    altitude = float(rospy.get_param('~altitude_msl_m'))
     if (not all(not math.isnan(v) and not math.isinf(v) for v in (latitude, longitude, altitude))
             or not -90 <= latitude <= 90 or not -180 <= longitude <= 180
             or not -1000 <= altitude <= 10000):
@@ -75,5 +75,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except (RuntimeError, rospy.ROSException) as error:
+    except (KeyError, TypeError, ValueError, RuntimeError, rospy.ROSException) as error:
         raise SystemExit(str(error))

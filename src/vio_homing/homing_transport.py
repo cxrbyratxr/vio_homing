@@ -122,14 +122,6 @@ class HomingTransport(object):
     def mark_setpoint_sent(self):
         self.eligible_land = True
 
-    def should_land(self, now, link_ok):
-        return (
-            self.enabled and self.session and link_ok and self.state == 'LAND'
-            and self.land and self.eligible_land and not self.land_sent
-            and self.odom_fresh(now)
-            and self.fresh(self.state_time, now, self.input_timeout)
-            and self.fresh(self.land_time, now, self.input_timeout)
-        )
 
     def mark_land_sent(self):
         self.land_sent = True

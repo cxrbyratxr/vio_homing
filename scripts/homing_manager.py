@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Stand coordinator for the existing recorder and Wi-Fi monitor.
+"""Return coordinator for the trajectory recorder and QGC link monitor.
 
 Outputs are ROS goals and LAND intent; the shared bridge transports them.
 """
@@ -91,7 +91,7 @@ class HomingManager(object):
         self.publish_state()
         self.timer = rospy.Timer(rospy.Duration(0.05), self.tick)
         rospy.loginfo(
-            'Homing manager: stand ROS outputs, wait %.1f s, radius %.2f m',
+            'Homing manager: ROS goals, wait %.1f s, radius %.2f m',
             self.logic.wait_link_seconds, self.logic.arrival_radius
         )
 

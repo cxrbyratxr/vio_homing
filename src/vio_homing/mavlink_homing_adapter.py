@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Homing transport on the bridge's existing, locked MAVLink connection."""
 import json
-import re
 import threading
 import time
 
@@ -33,7 +32,6 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
         )
         self.last_px4_heartbeat = None
         self.px4_armed = None
-        self.original_mode = None
         self.heartbeat_timeout = float(
             rospy.get_param('~px4_heartbeat_timeout', 2.5)
         )
@@ -43,11 +41,6 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
         self.last_setpoint = None
         self.land_pending = None
         self.land_ack = None
-        self.reconnect_not_before = 0.0
-        self.console_pending = None
-        self.bench_enabled = bool(
-            rospy.get_param('~enable_bench_console', False)
-        )
         self.tx_event_pub = rospy.Publisher(
             '/vio_homing/mavlink_tx_event', String, queue_size=100
         )
@@ -78,22 +71,6 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
                 '/vio_homing/land_command', Bool, self.homing_land_cb
             )
         ]
-        if self.bench_enabled:
-            self.console_pub = rospy.Publisher(
-                '/vio_homing/px4_console_response', String, queue_size=20
-            )
-            self.control_subs.extend(
-                [
-                    rospy.Subscriber(
-                        '/vio_homing/px4_console_request', String,
-                        self.console_request_cb
-                    ),
-                    rospy.Subscriber(
-                        '/vio_homing/bench_control', String,
-                        self.bench_control_cb
-                    )
-                ]
-            )
         self.transport_timer = rospy.Timer(
             rospy.Duration(0.2), self.publish_transport_status
         )
@@ -136,11 +113,6 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
                 msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED
             )
             self.flight_heartbeat(msg)
-            if self.original_mode is None:
-                self.original_mode = (
-                    (msg.custom_mode >> 16) & 255,
-                    (msg.custom_mode >> 24) & 255
-                )
 
     def mavlink_alive(self):
         return (
@@ -166,75 +138,7 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
         self.tx_event_pub.publish(String(data=json.dumps(event)))
 
     def tick_homing_io(self):
-        if self.execution_mode == 'flight':
-            return self.tick_flight_io()
-        return self.tick_bench_homing_io()
-
-    def tick_bench_homing_io(self):
-        with self.control_lock:
-            now = rospy.get_time()
-            alive = self.mavlink_alive()
-            # This stage is a disarmed bench. No ARM command exists here.
-            usable = alive and self.px4_armed is False
-            point = self.transport.next_setpoint(
-                now, usable,
-                self.get_clock_offset_ns() is not None
-            )
-            if point is not None and time.time(
-            ) - self.last_setpoint_send >= 0.05:
-                boot_usec = self.ros_time_to_px4_usec(rospy.Time.now())
-                if boot_usec is not None:
-                    with self.tx_lock:
-                        if self.master is not None:
-                            self.master.mav.set_position_target_local_ned_send(
-                                (boot_usec // 1000) & 0xffffffff,
-                                self.master.target_system,
-                                self.master.target_component,
-                                mavutil.mavlink.MAV_FRAME_LOCAL_NED, 3576,
-                                point[0], point[1], point[2], 0, 0, 0, 0, 0, 0,
-                                0, 0
-                            )
-                            self.last_setpoint_send = time.time()
-                            self.setpoint_count += 1
-                            self.last_setpoint = point
-                            self.transport.mark_setpoint_sent()
-                            self.tx_event(
-                                dict(
-                                    message='SET_POSITION_TARGET_LOCAL_NED',
-                                    position_ned=point,
-                                    coordinate_frame=1,
-                                    type_mask=3576,
-                                    count=self.setpoint_count,
-                                    session=self.transport.session
-                                )
-                            )
-            if self.transport.should_land(now, usable):
-                with self.tx_lock:
-                    if self.master is not None:
-                        nan = float('nan')
-                        self.master.mav.command_long_send(
-                            self.master.target_system,
-                            self.master.target_component,
-                            mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 0, 0, 0, nan,
-                            nan, nan, nan
-                        )
-                        self.transport.mark_land_sent()
-                        self.land_count += 1
-                        self.land_pending = time.time()
-                        self.land_ack = 'PENDING'
-                        self.tx_event(
-                            dict(
-                                message='COMMAND_LONG',
-                                command=21,
-                                count=self.land_count,
-                                session=self.transport.session
-                            )
-                        )
-            if self.land_pending is not None and time.time(
-            ) - self.land_pending > 3.0:
-                self.land_pending = None
-                self.land_ack = 'ACK_TIMEOUT_NO_AUTOMATIC_REPLAY'
-            self.poll_console()
+        return self.tick_flight_io()
 
     def command_ack_received(self, msg):
         if (
@@ -287,116 +191,3 @@ class MavlinkHomingAdapter(FlightHomingAdapter):
             )
             data.update(self.flight_status())
             self.transport_pub.publish(String(data=json.dumps(data)))
-
-    def console_request_cb(self, msg):
-        try:
-            request = json.loads(msg.data)
-            command = request['command']
-            allowed = command in ('ver all', 'mavlink status') or re.match(
-                r'^listener (trajectory_setpoint|offboard_control_mode|'
-                r'vehicle_command|'
-                r'vehicle_command_ack|vehicle_status|vehicle_local_position|'
-                r'vehicle_visual_odometry|vehicle_attitude) [1-5]$', command
-            )
-            if not allowed or len(command) > 68:
-                raise ValueError('Read-only bench command not allowed')
-            with self.control_lock:
-                if self.console_pending is not None or self.health_probe.pending or not self.mavlink_alive(
-                ):
-                    raise ValueError('Console busy or link unavailable')
-                data = bytearray((command + '\n').encode('utf-8'))
-                self.console_pending = dict(
-                    id=request['id'], text='', started=time.time(), last=None
-                )
-                with self.tx_lock:
-                    self.master.mav.serial_control_send(
-                        mavutil.mavlink.SERIAL_CONTROL_DEV_SHELL,
-                        mavutil.mavlink.SERIAL_CONTROL_FLAG_RESPOND
-                        | mavutil.mavlink.SERIAL_CONTROL_FLAG_EXCLUSIVE
-                        | mavutil.mavlink.SERIAL_CONTROL_FLAG_MULTI, 0, 0,
-                        len(data),
-                        list(data) + [0] * (70 - len(data))
-                    )
-        except Exception as error:
-            self.console_pub.publish(
-                String(
-                    data=json.dumps(
-                        dict(
-                            id=locals().get('request', {}).get('id'),
-                            error=str(error)
-                        )
-                    )
-                )
-            )
-
-    def serial_control_received(self, msg):
-        with self.control_lock:
-            if self.console_pending is not None and msg.count:
-                self.console_pending['text'] += bytearray(
-                    msg.data[:msg.count]
-                ).decode('utf-8', 'replace')
-                self.console_pending['last'] = time.time()
-
-    def poll_console(self):
-        pending = self.console_pending
-        if pending is None:
-            return
-        quiet = pending['last'] is not None and time.time() - \
-            pending['last'] > 0.5
-        if quiet or time.time() - pending['started'] > 8.0:
-            self.console_pub.publish(
-                String(
-                    data=json.
-                    dumps(dict(id=pending['id'], text=pending['text']))
-                )
-            )
-            with self.tx_lock:
-                if self.master is not None:
-                    self.master.mav.serial_control_send(
-                        10, 0, 0, 0, 0, [0] * 70
-                    )
-            self.console_pending = None
-
-    def bench_control_cb(self, msg):
-        try:
-            request = json.loads(msg.data)
-            with self.control_lock:
-                if not self.mavlink_alive() or self.px4_armed is not False:
-                    raise ValueError(
-                        'Bench control requires disarmed PX4 and live link'
-                    )
-                action = request['action']
-                if action in ('offboard', 'restore'):
-                    mode = (
-                        6, 0
-                    ) if action == 'offboard' else self.original_mode
-                    with self.tx_lock:
-                        self.master.mav.command_long_send(
-                            self.master.target_system,
-                            self.master.target_component,
-                            mavutil.mavlink.MAV_CMD_DO_SET_MODE, 0, 1, mode[0],
-                            mode[1], 0, 0, 0, 0
-                        )
-                    self.tx_event(
-                        dict(
-                            message='COMMAND_LONG',
-                            command=176,
-                            bench_action=action,
-                            mode=mode
-                        )
-                    )
-                elif action == 'disconnect':
-                    seconds = float(request.get('seconds', 4.0))
-                    if not 1 <= seconds <= 10:
-                        raise ValueError('Disconnect interval must be 1..10 s')
-                    self.reconnect_not_before = time.time() + seconds
-                    self.close()
-                    self.tx_event(
-                        dict(
-                            message='BENCH_SERIAL_DISCONNECT', seconds=seconds
-                        )
-                    )
-                else:
-                    raise ValueError('Unknown bench action')
-        except Exception as error:
-            rospy.logerr('Bench control refused: %s', error)
