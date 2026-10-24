@@ -1,0 +1,8 @@
+# Geographic location of the PX4 local EKF origin, NOT the current VINS pose.
+# Replace these three values before operating at a different launch location.
+# Altitude is metres above mean sea level (MSL), not height above ground.
+# Latitude, longitude and altitude MSL supplied by the user.
+latitude_deg: 56.098828
+longitude_deg: 35.869226
+altitude_msl_m: 153.0
+synthetic_reference: false

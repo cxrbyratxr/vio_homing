@@ -82,6 +82,7 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
 
         self.init_homing_adapter()
         self.known_global_origin = None
+        self.requested_global_origin = None
         self.origin_pub = rospy.Publisher('/vio_homing/global_origin_response', String, queue_size=5)
         self.origin_sub = rospy.Subscriber('/vio_homing/global_origin_request', String,
                                            self.set_global_origin, queue_size=1)
@@ -103,10 +104,20 @@ class MavlinkImuBridge(MavlinkHomingAdapter):
                     raise ValueError('Origin requires live disarmed PX4 on ground')
                 if self.known_global_origin is not None and self.known_global_origin != (lat, lon, alt):
                     raise ValueError('Refusing to replace an already observed different EKF origin')
-                if not self.new_navigation_epoch('GLOBAL_ORIGIN_REQUEST'):
-                    raise ValueError('Cannot reset navigation epoch before origin')
+                target = (lat, lon, alt)
+                if self.requested_global_origin not in (None, target):
+                    raise ValueError('Restart PX4 and bridge before changing the configured origin')
+                if self.known_global_origin == target:
+                    self.origin_pub.publish(String(data=json.dumps(values)))
+                    return
+                if self.requested_global_origin is None:
+                    if not self.new_navigation_epoch('GLOBAL_ORIGIN_REQUEST'):
+                        raise ValueError('Cannot reset navigation epoch before origin')
+                    with self.tx_lock:
+                        self.master.mav.set_gps_global_origin_send(self.master.target_system, lat, lon, alt)
+                    self.requested_global_origin = target
+                # Retries query confirmation, never reset the route or resend origin.
                 with self.tx_lock:
-                    self.master.mav.set_gps_global_origin_send(self.master.target_system, lat, lon, alt)
                     self.master.mav.command_long_send(self.master.target_system,
                         self.master.target_component, 512, 0, 49, 0, 0, 0, 0, 0, 0)
         except (KeyError, TypeError, ValueError) as error:

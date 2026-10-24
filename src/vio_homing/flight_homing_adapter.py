@@ -106,9 +106,11 @@ class FlightHomingAdapter(object):
                     len(data), list(data)+[0]*(70-len(data)))
 
     def request_flight_telemetry(self):
-        if self.execution_mode != 'flight' and not self.auto_alignment:
-            return
-        for message, hz in [(331, 10), (230, 5), (245, 2)]:
+        # Map telemetry is needed in bench mode too, independently of control.
+        streams = [(33, 5), (49, 1), (242, 1), (30, 20), (74, 5), (245, 2)]
+        if self.execution_mode == 'flight' or self.auto_alignment:
+            streams += [(331, 10), (230, 5)]
+        for message, hz in streams:
             with self.tx_lock:
                 self.master.mav.command_long_send(
                     self.master.target_system, self.master.target_component,
